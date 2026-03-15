@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Consultation | CareerBridge-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.18.2.js"></script>
+    <script src="js/agora-rtc.js"></script>
+    <style>
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px border rgba(255, 255, 255, 0.1);
+        }
+
+        .video-container {
+            position: relative;
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .video-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 30px 60px -12px rgba(59, 130, 246, 0.3);
+        }
+
+        #local-player,
+        #remote-playerlist {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            padding: 12px 24px;
+            border-radius: 40px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 50;
+        }
+
+        .control-btn {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .control-btn:hover {
+            transform: scale(1.15) rotate(5deg);
+        }
+
+        .btn-red {
+            background: #ef4444;
+        }
+
+        .btn-gray {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-blue {
+            background: #3b82f6;
+        }
+
+        .btn-gray.active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-red.inactive {
+            background: #991b1b;
+        }
+
+        /* Animation */
+        @keyframes pulse-red {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .live-indicator {
+            animation: pulse-red 2s infinite;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-950 h-screen overflow-hidden flex flex-col md:flex-row font-[Inter]">
+
+    <!-- Video Area -->
+    <div
+        class="flex-1 p-6 flex flex-col justify-center relative bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black">
+        <div class="absolute top-8 left-8 z-10">
+            <h1 class="text-white text-2xl font-bold tracking-tight mb-1">Career Consultation <span
+                    class="text-blue-500">Pro</span></h1>
+            <p class="text-slate-400 text-sm flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-red-500 live-indicator"></span>
+                <span id="session-status">Initializing Session...</span>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 h-full max-h-[85vh] items-center">
+            <!-- Remote Video -->
+            <div class="video-container group">
+                <div id="remote-playerlist"></div>
+                <div
+                    class="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-white text-xs font-semibold">Consultant</span>
+                </div>
+                <!-- Remote User Placeholder -->
+                <div id="remote-placeholder" class="absolute inset-0 flex items-center justify-center bg-slate-900 z-0">
+                    <div class="text-center">
+                        <div
+                            class="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/5">
+                            <i class="fas fa-user text-3xl text-slate-600"></i>
+                        </div>
+                        <p class="text-slate-500 text-sm">Waiting for other participant...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Video -->
+            <div class="video-container group border border-white/5">
+                <div id="local-player"></div>
+                <div
+                    class="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="text-white text-xs font-semibold">You</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls shadow-2xl">
+            <button onclick="handleToggleAudio()" id="btn-audio" class="control-btn btn-gray" title="Toggle Mic">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button onclick="handleToggleVideo()" id="btn-video" class="control-btn btn-gray" title="Toggle Camera">
+                <i class="fas fa-video"></i>
+            </button>
+            <button onclick="handleScreenShare()" id="btn-screen" class="control-btn btn-blue" title="Share Screen">
+                <i class="fas fa-desktop"></i>
+            </button>
+            <button onclick="handleEndCall()" class="control-btn btn-red" title="End Call">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Chat Sidebar -->
+    <div class="w-full md:w-[400px] bg-white flex flex-col h-1/2 md:h-full border-l border-slate-200 shadow-2xl">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white z-10">
+            <div>
+                <h2 class="font-bold text-slate-800 text-lg">Session Chat</h2>
+                <p class="text-xs text-slate-400">End-to-end encrypted</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <span
+                    class="text-[10px] bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full font-bold uppercase tracking-wider">Secure</span>
+                <button class="text-slate-400 hover:text-slate-600 transition-colors"><i
+                        class="fas fa-ellipsis-v"></i></button>
+            </div>
+        </div>
+
+        <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4 bg-slate-50/50">
+            <div class="text-center py-4">
+                <span class="text-[10px] bg-slate-200 text-slate-500 px-3 py-1 rounded-full font-medium">SESSION STARTED
+                    AT <span id="start-time"></span></span>
+            </div>
+        </div>
+
+        <div class="p-6 border-t border-slate-100 bg-white">
+            <form id="chat-form" class="flex items-center gap-3">
+                <div class="flex-1 relative">
+                    <input type="text" id="msg-input" placeholder="Type your message..."
+                        class="w-full p-4 bg-slate-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all text-sm border border-transparent focus:border-blue-500/30">
+                </div>
+                <button type="submit"
+                    class="w-12 h-12 flex items-center justify-center bg-blue-600 text-white rounded-2xl hover:bg-blue-700 hover:shadow-lg hover:shadow-blue-500/30 transition-all transform active:scale-95">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        const socket = io(); // Connect to same host
+        const urlParams = new URLSearchParams(window.location.search);
+        const sessionId = urlParams.get('sessionId') || urlParams.get('roomId');
+        const userId = localStorage.getItem('userId');
+        const role = localStorage.getItem('role');
+        const userName = localStorage.getItem('userName') || 'User';
+
+        let micEnabled = true;
+        let videoEnabled = true;
+
+        // --- Initialization ---
+        async function init() {
+            if (!sessionId) {
+                Swal.fire('Error', 'Invalid Session ID', 'error');
+                return;
+            }
+
+            document.getElementById('start-time').innerText = new Date().toLocaleTimeString();
+
+            // 1. Join Socket Room
+            socket.emit('join_session', { sessionId, userId });
+
+            // 2. Initialize Agora
+            const APP_ID = "YOUR_AGORA_APP_ID"; // Replace with your App ID or fetch from config
+            const token = null; // Use null for testing (App Certificate disabled in Agora)
+
+            try {
+                document.getElementById('session-status').innerText = 'Connecting to Video...';
+                await window.agoraClient.init(APP_ID, sessionId, token, parseInt(userId.slice(-5), 16));
+                await window.agoraClient.join();
+                document.getElementById('session-status').innerText = 'Live - Connected';
+            } catch (err) {
+                console.error('Agora Init Error:', err);
+                document.getElementById('session-status').innerText = 'A/V Error - Chat Only';
+                Swal.fire('Notice', 'Continuing with chat only. Could not access camera.', 'info');
+            }
+
+            // 3. Socket Listeners
+            socket.on('receive_message', (msg) => {
+                appendMessage(msg.content, msg.senderId === userId ? 'me' : 'other');
+            });
+
+            socket.on('user_joined', (data) => {
+                const remotePlaceholder = document.getElementById('remote-placeholder');
+                if (remotePlaceholder) remotePlaceholder.style.display = 'none';
+                appendSystemMessage('Other participant has joined');
+            });
+
+            socket.on('session_ended', () => {
+                Swal.fire({
+                    title: 'Session Ended',
+                    text: 'The other participant has left the consultation.',
+                    icon: 'info',
+                    confirmButtonText: 'Back to Dashboard'
+                }).then(() => {
+                    window.location.href = role === 'consultant' ? 'consultant.html' : 'dashboard.html';
+                });
+            });
+        }
+
+        // --- Event Handlers ---
+        async function handleToggleAudio() {
+            micEnabled = !micEnabled;
+            await window.agoraClient.toggleAudio(micEnabled);
+            const btn = document.getElementById('btn-audio');
+            btn.classList.toggle('btn-red', !micEnabled);
+            btn.querySelector('i').className = micEnabled ? 'fas fa-microphone' : 'fas fa-microphone-slash';
+        }
+
+        async function handleToggleVideo() {
+            videoEnabled = !videoEnabled;
+            await window.agoraClient.toggleVideo(videoEnabled);
+            const btn = document.getElementById('btn-video');
+            btn.classList.toggle('btn-red', !videoEnabled);
+            btn.querySelector('i').className = videoEnabled ? 'fas fa-video' : 'fas fa-video-slash';
+        }
+
+        async function handleScreenShare() {
+            try {
+                await window.agoraClient.startScreenShare();
+            } catch (err) {
+                console.error('Screen share error:', err);
+            }
+        }
+
+        function handleEndCall() {
+            Swal.fire({
+                title: 'End Session?',
+                text: "Are you sure you want to end this consultation?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                confirmButtonText: 'Yes, End Now'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    socket.emit('end_session', { sessionId });
+                    await window.agoraClient.leave();
+                    window.location.href = role === 'consultant' ? 'consultant.html' : 'dashboard.html';
+                }
+            });
+        }
+
+        // --- Chat UI ---
+        document.getElementById('chat-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const content = document.getElementById('msg-input').value.trim();
+            if (!content) return;
+
+            socket.emit('send_message', { sessionId, senderId: userId, content });
+            document.getElementById('msg-input').value = '';
+        });
+
+        function appendMessage(text, sender) {
+            const chatBox = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = sender === 'me' ? 'flex justify-end' : 'flex justify-start';
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            div.innerHTML = `
+                <div class="max-w-[85%] group">
+                    <div class="${sender === 'me' ? 'bg-blue-600 text-white rounded-2xl rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-2xl rounded-tl-none'} p-4 shadow-sm relative transition-all hover:shadow-md">
+                        <p class="text-sm leading-relaxed">${text}</p>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1.5 px-1 ${sender === 'me' ? 'text-right' : 'text-left'}">${time}</p>
+                </div>
+            `;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function appendSystemMessage(text) {
+            const chatBox = document.getElementById('chat-messages');
+            const div = document.createElement('div');
+            div.className = 'flex justify-center my-2';
+            div.innerHTML = `<span class="text-[10px] bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-medium italic">${text}</span>`;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Auto-init on load
+        window.onload = init;
+    </script>
+</body>
+
+</html>

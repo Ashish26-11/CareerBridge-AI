@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employer Dashboard | CareerBridge-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: { blue: '#2563eb', green: '#10b981', red: '#ef4444', dark: '#0f172a' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-sidebar {
+            background: #0f172a;
+            color: white;
+            border-right: 1px solid #1e293b;
+        }
+
+        .nav-item {
+            transition: all 0.2s;
+            color: #94a3b8;
+        }
+
+        .nav-item:hover {
+            color: white;
+            background: #1e293b;
+        }
+
+        .nav-item.active {
+            background: #2563eb;
+            color: white;
+            font-weight: 700;
+        }
+
+        .section-view {
+            display: none;
+        }
+
+        .section-view.active {
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 antialiased flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-72 glass-sidebar sticky top-0 h-screen flex flex-col p-6">
+        <div class="flex items-center space-x-2 mb-10 px-2">
+            <div class="w-8 h-8 bg-brand-green rounded-lg flex items-center justify-center text-white text-xs">
+                <i class="fas fa-briefcase"></i>
+            </div>
+            <span class="text-xl font-bold">Employer Portal</span>
+        </div>
+
+        <nav class="flex-1 space-y-1">
+            <a href="index.html"
+                class="nav-item w-full flex items-center space-x-4 p-3 rounded-xl mb-4 bg-slate-800/50 text-white font-bold border border-slate-700/50">
+                <i class="fas fa-home w-5 text-brand-green"></i><span>Back to Home</span>
+            </a>
+            <button onclick="showSection('overview')" id="nav-overview"
+                class="nav-item active w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-chart-line w-5"></i><span>Overview</span>
+            </button>
+            <button onclick="showSection('post-job')" id="nav-post-job"
+                class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-plus-circle w-5"></i><span>Post a Job</span>
+            </button>
+            <button onclick="showSection('my-jobs')" id="nav-my-jobs"
+                class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-list-ul w-5"></i><span>My Job Posts</span>
+            </button>
+            <button onclick="showSection('analytics')" id="nav-analytics"
+                class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-chart-pie w-5"></i><span>Hiring Analytics</span>
+            </button>
+            <button onclick="showSection('hired')" id="nav-hired"
+                class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-user-check w-5"></i><span>Hired Candidates</span>
+            </button>
+            <button onclick="showSection('profile')" id="nav-profile"
+                class="nav-item w-full flex items-center space-x-3 p-3 rounded-xl">
+                <i class="fas fa-building w-5"></i><span>Company Profile</span>
+            </button>
+        </nav>
+
+        <div class="mt-6 pt-6 border-t border-slate-800">
+            <button onclick="logout()"
+                class="flex items-center space-x-3 p-3 text-brand-red hover:bg-slate-800 w-full rounded-xl transition-all">
+                <i class="fas fa-sign-out-alt w-5"></i><span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-10 overflow-y-auto">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold" id="page-title">Employer Overview</h1>
+                <p class="text-slate-500 text-sm mt-1" id="company-welcome">Welcome back, Acme Corp</p>
+            </div>
+            <div id="verification-badge"
+                class="hidden bg-green-100 text-green-600 px-4 py-2 rounded-xl text-xs font-bold border border-green-200">
+                <i class="fas fa-check-circle mr-2"></i>Verified Employer
+            </div>
+        </header>
+
+        <!-- 1. Overview -->
+        <section id="view-overview" class="section-view active">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <p class="text-slate-400 font-bold text-[10px] uppercase mb-1">Active Jobs</p>
+                    <div class="text-3xl font-black" id="stat-active-jobs">0</div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <p class="text-slate-400 font-bold text-[10px] uppercase mb-1">Total Applications</p>
+                    <div class="text-3xl font-black text-brand-blue" id="stat-total-apps">0</div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <p class="text-slate-400 font-bold text-[10px] uppercase mb-1">Shortlisted</p>
+                    <div class="text-3xl font-black text-brand-green" id="stat-shortlisted">0</div>
+                </div>
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                    <p class="text-slate-400 font-bold text-[10px] uppercase mb-1">Hired</p>
+                    <div class="text-3xl font-black text-slate-900" id="stat-hired">0</div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm mb-10">
+                <h3 class="font-bold mb-6">Recent Applicants</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] uppercase font-bold border-b border-slate-50">
+                                <th class="pb-4">Candidate</th>
+                                <th class="pb-4">Applied For</th>
+                                <th class="pb-4">Match Score</th>
+                                <th class="pb-4">Status</th>
+                                <th class="pb-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recent-applicants-table">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Post a Job -->
+        <section id="view-post-job" class="section-view">
+            <div class="max-w-3xl bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h2 class="text-2xl font-bold mb-8">Post a New Requirement</h2>
+                <form id="jobForm" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Job Title</label>
+                            <input type="text" name="title" required
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium"
+                                placeholder="e.g. Frontend Developer">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Location</label>
+                            <input type="text" name="location" required
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium"
+                                placeholder="City or Remote">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Job Type</label>
+                            <select name="type"
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                                <option value="Full-time">Full-time</option>
+                                <option value="Internship">Internship</option>
+                                <option value="Apprenticeship">Apprenticeship</option>
+                                <option value="Contract">Contract</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Salary Range</label>
+                            <input type="text" name="salary"
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium"
+                                placeholder="e.g. ₹5-8 LPA">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Required Skills (Comma
+                            separated)</label>
+                        <input type="text" name="skills" required
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium"
+                            placeholder="Python, React, AWS">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Job Description</label>
+                        <textarea name="description" rows="5" required
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium"
+                            placeholder="Describe the role and responsibilities..."></textarea>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-brand-dark text-white py-4 rounded-2xl font-bold shadow-lg hover:scale-[1.01] transition-all">Submit
+                        Listing</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. My Jobs -->
+        <section id="view-my-jobs" class="section-view">
+            <div class="grid md:grid-cols-2 gap-6" id="my-jobs-list">
+                <!-- Injected by JS -->
+            </div>
+        </section>
+
+        <!-- 4. Applicants (Detailed) -->
+        <section id="view-applicants-list" class="section-view">
+            <div class="mb-6 flex items-center space-x-4">
+                <button onclick="showSection('my-jobs')" class="text-slate-400 hover:text-slate-900 transition-all">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h2 class="text-2xl font-bold" id="job-detail-title">Applicants for ...</h2>
+            </div>
+            <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Candidate</th>
+                            <th class="p-6">Education/Experience</th>
+                            <th class="p-6">Match Score</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-applicants-table">
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 5. Hiring Analytics -->
+        <section id="view-analytics" class="section-view">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+                <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <h3 class="font-bold mb-6">Hiring Process Analysis</h3>
+                    <div class="h-[300px]">
+                        <canvas id="hiringChart"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                    <h3 class="font-bold mb-6">Quick Stats</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <p class="text-slate-400 text-xs font-bold uppercase mb-2">Hiring Rate</p>
+                            <div class="flex items-end space-x-2">
+                                <div class="text-3xl font-black text-brand-green" id="hiring-rate">0%</div>
+                                <p class="text-slate-400 text-xs mb-1">of total applicants</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 text-xs font-bold uppercase mb-2">Top Performer</p>
+                            <div id="top-performer" class="text-lg font-bold text-slate-700">Checking...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-sm">
+                <h3 class="font-bold mb-6">Placement Details</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] uppercase font-bold border-b border-slate-50">
+                                <th class="pb-4">Hired Candidate</th>
+                                <th class="pb-4">Job Role</th>
+                                <th class="pb-4">Hired On</th>
+                                <th class="pb-4">Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody id="analytics-hired-table">
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 6. Hired Candidates -->
+        <section id="view-hired" class="section-view">
+            <div class="bg-white rounded-[2rem] border border-slate-100 shadow-sm overflow-hidden">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Candidate</th>
+                            <th class="p-6">Role</th>
+                            <th class="p-6">Location</th>
+                            <th class="p-6">Hired Date</th>
+                            <th class="p-6">Contact Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hired-applicants-table">
+                        <!-- Injected by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 7. Profile Section -->
+        <section id="view-profile" class="section-view">
+            <div class="max-w-3xl bg-white p-10 rounded-[2.5rem] border border-slate-100 shadow-sm">
+                <h2 class="text-2xl font-bold mb-8">Company Profile</h2>
+                <form id="profileForm" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Company Name</label>
+                            <input type="text" id="prof-companyName" required
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Contact Name</label>
+                            <input type="text" id="prof-name" required
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Website</label>
+                            <input type="url" id="prof-website"
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">GST Number</label>
+                            <input type="text" id="prof-gst"
+                                class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-2">Company Logo URL</label>
+                        <input type="text" id="prof-logo"
+                            class="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl font-medium">
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-brand-blue text-white py-4 rounded-2xl font-bold shadow-lg hover:scale-[1.01] transition-all">Update
+                        Profile</button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal for User Profile in Employer View -->
+    <div id="candidateModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+        <div class="bg-white rounded-[3rem] max-w-2xl w-full p-10 relative overflow-hidden">
+            <button onclick="closeCandidateModal()" class="absolute top-8 right-8 text-slate-400 hover:text-slate-900">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div id="candidate-content">
+                <!-- Injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user'));
+
+        if (!token || localStorage.getItem('userRole') !== 'employer') {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('company-welcome').innerText = `Welcome back, ${user.company?.name || user.name}`;
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section-view').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            const target = document.getElementById('view-' + sectionId);
+            if (target) target.classList.add('active');
+
+            const nav = document.getElementById('nav-' + (sectionId.includes('applicants-list') ? 'my-jobs' : sectionId));
+            if (nav) nav.classList.add('active');
+
+            document.getElementById('page-title').innerText = sectionId.charAt(0).toUpperCase() + sectionId.slice(1).replace('-', ' ');
+
+            if (sectionId === 'overview') loadStats();
+            if (sectionId === 'my-jobs') loadMyJobs();
+            if (sectionId === 'hired') loadHiredApplicants();
+            if (sectionId === 'analytics') loadAnalytics();
+        }
+
+        async function loadStats() {
+            const res = await fetch('http://localhost:5000/api/employer/stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const stats = await res.json();
+            document.getElementById('stat-active-jobs').innerText = stats.activeJobs;
+            document.getElementById('stat-total-apps').innerText = stats.totalApplications;
+            document.getElementById('stat-hired').innerText = stats.hiredCount;
+            if (stats.verificationStatus) document.getElementById('verification-badge').classList.remove('hidden');
+        }
+
+        async function loadMyJobs() {
+            const res = await fetch('http://localhost:5000/api/employer/my-jobs', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const jobs = await res.json();
+            const list = document.getElementById('my-jobs-list');
+            list.innerHTML = jobs.map(j => `
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:border-brand-blue transition-all group">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <h3 class="font-bold text-xl mb-1">${j.title}</h3>
+                            <p class="text-slate-400 text-sm font-medium">${j.location} • ${j.type}</p>
+                        </div>
+                        <div class="flex flex-col items-end space-y-2">
+                             <span class="bg-blue-50 text-brand-blue px-3 py-1 rounded-full text-[10px] font-black uppercase">${j.status}</span>
+                             <div class="flex space-x-2">
+                                <button onclick="deleteJob('${j._id}')" class="text-red-500 hover:text-red-700 text-xs"><i class="fas fa-trash"></i></button>
+                             </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-6 border-t border-slate-50">
+                        <div class="flex -space-x-2">
+                            <div class="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-slate-400">${j.applicantsCount}</div>
+                            <span class="ml-10 text-[10px] font-bold text-slate-400 uppercase tracking-tighter self-center">Applicants</span>
+                        </div>
+                        <button onclick="viewApplicants('${j._id}', '${j.title}')" class="text-brand-blue text-xs font-black uppercase tracking-widest hover:translate-x-1 transition-all">View All <i class="fas fa-chevron-right ml-1"></i></button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        let currentApplicants = [];
+        let currentJobId = null;
+        let currentJobTitle = null;
+
+        async function viewApplicants(jobId, jobTitle) {
+            currentJobId = jobId;
+            currentJobTitle = jobTitle;
+            document.getElementById('job-detail-title').innerText = `Applicants for ${jobTitle}`;
+            showSection('applicants-list');
+
+            const res = await fetch(`http://localhost:5000/api/employer/jobs/${jobId}/applicants`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            currentApplicants = await res.json();
+            const table = document.getElementById('all-applicants-table');
+            table.innerHTML = currentApplicants.map(a => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-all cursor-pointer" onclick="openCandidateModal('${a._id}')">
+                    <td class="p-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-400"><i class="fas fa-user"></i></div>
+                            <div>
+                                <p class="font-bold text-slate-900">${a.userId.name}</p>
+                                <p class="text-slate-400 text-xs">${a.userId.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-6 text-sm font-medium text-slate-600">${a.userId.location || 'N/A'}</td>
+                    <td class="p-6">
+                        <span class="font-black text-brand-blue">${a.matchScore}%</span>
+                    </td>
+                    <td class="p-6">
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${getStatusClass(a.status)}">${a.status}</span>
+                    </td>
+                    <td class="p-6">
+                        <div class="flex space-x-2" onclick="event.stopPropagation()">
+                            ${a.status !== 'Hired' ? `
+                                <button onclick="updateStatus('${a._id}', 'Shortlisted')" class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-all"><i class="fas fa-star text-xs"></i></button>
+                                <button onclick="updateStatus('${a._id}', 'Hired')" class="w-8 h-8 bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-all"><i class="fas fa-check text-xs"></i></button>
+                                <button onclick="updateStatus('${a._id}', 'Rejected')" class="w-8 h-8 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all"><i class="fas fa-times text-xs"></i></button>
+                            ` : '<span class="text-xs font-bold text-slate-400">Actions Disabled</span>'}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openCandidateModal(appId) {
+            const app = currentApplicants.find(a => a._id === appId);
+            if (!app) return;
+
+            const user = app.userId;
+            document.getElementById('candidate-content').innerHTML = `
+                <div class="flex items-start justify-between mb-8">
+                    <div class="flex items-center space-x-4">
+                        <div class="w-16 h-16 bg-brand-blue/10 text-brand-blue rounded-2xl flex items-center justify-center text-3xl font-bold">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">\${user.name}</h2>
+                            <p class="text-slate-500">\${user.email}</p>
+                        </div>
+                    </div>
+                    <span class="bg-brand-blue text-white px-4 py-2 rounded-xl text-lg font-black">\${app.matchScore}% Match</span>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-6 mb-8">
+                    <div class="bg-slate-50 p-4 rounded-2xl">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Location</p>
+                        <p class="font-bold text-slate-700">\${user.location || 'Not specified'}</p>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-2xl">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Education</p>
+                        <p class="font-bold text-slate-700">\${user.education?.qualification || 'Not specified'}</p>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <h3 class="font-bold text-slate-700 mb-3">Skills</h3>
+                    <div class="flex flex-wrap gap-2">
+                        \${(user.skills && user.skills.length > 0) ? user.skills.map(s => \`<span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold">\${s}</span>\`).join('') : '<p class="text-slate-400 text-sm">No skills listed</p>'}
+                    </div>
+                </div>
+
+                <div class="flex space-x-4">
+                    \${user.resume?.url ? \`<a href="\${user.resume.url}" target="_blank" class="flex-1 bg-slate-900 text-white text-center py-3 rounded-xl font-bold hover:bg-slate-800 transition-all"><i class="fas fa-file-pdf mr-2"></i> View Resume</a>\` : \`<button disabled class="flex-1 bg-slate-200 text-slate-400 text-center py-3 rounded-xl font-bold cursor-not-allowed">No Resume</button>\`}
+                    \${app.status !== 'Hired' ? \`<button onclick="updateStatus('\${app._id}', 'Shortlisted'); closeCandidateModal()" class="flex-1 bg-brand-blue text-white text-center py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:scale-[1.02] transition-all">Shortlist</button>\` : ''}
+                </div>
+            `;
+            document.getElementById('candidateModal').classList.remove('hidden');
+        }
+
+        function closeCandidateModal() {
+            document.getElementById('candidateModal').classList.add('hidden');
+        }
+
+        async function updateStatus(appId, status) {
+            if (!confirm(`Mark candidate as ${status}?`)) return;
+            const res = await fetch(`http://localhost:5000/api/employer/applications/${appId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                if (currentJobId && currentJobTitle) {
+                    viewApplicants(currentJobId, currentJobTitle);
+                }
+            }
+        }
+
+        function getStatusClass(s) {
+            if (s === 'Applied') return 'bg-slate-100 text-slate-400';
+            if (s === 'Shortlisted') return 'bg-blue-100 text-brand-blue';
+            if (s === 'Hired') return 'bg-green-100 text-brand-green';
+            return 'bg-red-100 text-brand-red';
+        }
+
+        async function loadHiredApplicants() {
+            const res = await fetch('http://localhost:5000/api/employer/hired-applicants', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const hired = await res.json();
+            const table = document.getElementById('hired-applicants-table');
+            table.innerHTML = hired.map(h => `
+                <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-all">
+                    <td class="p-6">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-brand-green"><i class="fas fa-user-check"></i></div>
+                            <div>
+                                <p class="font-bold text-slate-900">${h.userId.name}</p>
+                                <p class="text-slate-400 text-xs">${h.userId.email}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-6 text-sm font-bold text-slate-700">${h.jobId.title}</td>
+                    <td class="p-6 text-sm text-slate-500">${h.userId.location || 'N/A'}</td>
+                    <td class="p-6 text-sm font-medium">${new Date(h.updatedAt).toLocaleDateString()}</td>
+                    <td class="p-6">
+                        <button onclick="alert('Contact: ${h.userId.email}')" class="text-brand-blue text-xs font-bold hover:underline">View Contact</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        let hiringChart = null;
+        async function loadAnalytics() {
+            const res = await fetch('http://localhost:5000/api/employer/stats', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const stats = await res.json();
+
+            // Fetch applicants to get detailed breakdown if stats doesn't provide enough
+            // But since we just need Hired vs Total, we can use stats
+
+            const hiredRes = await fetch('http://localhost:5000/api/employer/hired-applicants', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const hiredList = await hiredRes.json();
+
+            // Update table
+            const table = document.getElementById('analytics-hired-table');
+            table.innerHTML = hiredList.map(h => `
+                <tr class="text-sm border-b border-slate-50">
+                    <td class="py-4 font-bold">${h.userId.name}</td>
+                    <td class="py-4 text-slate-500">${h.jobId.title}</td>
+                    <td class="py-4">${new Date(h.updatedAt).toLocaleDateString()}</td>
+                    <td class="py-4"><span class="text-xs bg-slate-100 px-2 py-1 rounded-lg">${h.userId.email}</span></td>
+                </tr>
+            `).join('');
+
+            // Update Stats
+            document.getElementById('hiring-rate').innerText =
+                stats.totalApplications > 0 ? Math.round((stats.hiredCount / stats.totalApplications) * 100) + '%' : '0%';
+
+            if (hiredList.length > 0) {
+                document.getElementById('top-performer').innerText = hiredList[0].userId.name;
+            } else {
+                document.getElementById('top-performer').innerText = 'None yet';
+            }
+
+            // Chart
+            const ctx = document.getElementById('hiringChart').getContext('2d');
+            if (hiringChart) hiringChart.destroy();
+
+            hiringChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Applications', 'Hired'],
+                    datasets: [{
+                        label: 'Status Overview',
+                        data: [stats.totalApplications, stats.hiredCount],
+                        backgroundColor: ['#2563eb', '#10b981'],
+                        borderRadius: 12,
+                        barThickness: 60
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { display: false } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        async function loadProfile() {
+            const res = await fetch('http://localhost:5000/api/users/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            document.getElementById('prof-companyName').value = data.company?.name || '';
+            document.getElementById('prof-name').value = data.name || '';
+            document.getElementById('prof-website').value = data.company?.website || '';
+            document.getElementById('prof-gst').value = data.company?.gst || '';
+            document.getElementById('prof-logo').value = data.company?.logo || '';
+        }
+
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('prof-name').value,
+                company: {
+                    name: document.getElementById('prof-companyName').value,
+                    website: document.getElementById('prof-website').value,
+                    gst: document.getElementById('prof-gst').value,
+                    logo: document.getElementById('prof-logo').value
+                }
+            };
+            const res = await fetch('http://localhost:5000/api/users/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert('Profile updated successfully');
+                location.reload();
+            }
+        });
+
+        async function deleteJob(jobId) {
+            if (!confirm('Are you sure you want to delete this job?')) return;
+            // Assuming admin route is used for deletion as employer route doesn't have it yet, 
+            // but we should probably add a delete route in employer.js or use admin one if it allows (it won't because of isAdmin).
+            // Let's check if employer.js needs a delete route.
+            const res = await fetch(`http://localhost:5000/api/employer/jobs/${jobId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                alert('Job deleted');
+                loadMyJobs();
+            } else {
+                alert('Error deleting job');
+            }
+        }
+
+        document.getElementById('jobForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            data.skills = data.skills.split(',').map(s => s.trim());
+
+            const res = await fetch('http://localhost:5000/api/employer/jobs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                alert('Job posted successfully');
+                showSection('my-jobs');
+            } else {
+                const errData = await res.json();
+                alert('Error posting job: ' + (errData.message || 'Unknown error'));
+            }
+        });
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        showSection('overview');
+        loadProfile();
+    </script>
+</body>
+
+</html>

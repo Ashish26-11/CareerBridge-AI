@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | CareerBridge-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .gradient-bg {
+            background: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 min-h-screen flex items-center justify-center p-6">
+    <div class="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 border border-slate-100">
+        <div class="text-center mb-10">
+            <div
+                class="w-16 h-16 gradient-bg rounded-2xl mx-auto flex items-center justify-center text-white text-2xl mb-4 shadow-lg">
+                <i class="fas fa-user-plus"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-900">Join CareerBridge</h1>
+            <p class="text-slate-500 mt-2">Start your AI-powered career journey</p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-4 bg-slate-50 p-1 rounded-2xl border border-slate-100">
+            <button type="button" onclick="setRole('user')" id="role-user"
+                class="py-2 rounded-xl text-sm font-bold bg-white shadow-sm border border-slate-200">Job Seeker</button>
+            <button type="button" onclick="setRole('employer')" id="role-employer"
+                class="py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 transition-all">Employer</button>
+            <button type="button" onclick="setRole('consultant')" id="role-consultant"
+                class="py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 transition-all">Consultant</button>
+        </div>
+
+        <form id="signupForm" class="space-y-4">
+            <input type="hidden" id="role" value="user">
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Full Name</label>
+                <input type="text" id="name" required
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="John Doe">
+            </div>
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Email Address</label>
+                <input type="email" id="email" required
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="name@example.com">
+            </div>
+
+            <div id="employer-fields" class="hidden space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">Company Name</label>
+                    <input type="text" id="companyName"
+                        class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                        placeholder="Acme Corp">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">Website</label>
+                        <input type="text" id="website"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            placeholder="acme.com">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">GST Number</label>
+                        <input type="text" id="gst"
+                            class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                            placeholder="GSTIN123">
+                    </div>
+
+                    <div id="consultant-fields" class="hidden space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Years of
+                                    Experience</label>
+                                <input type="number" id="consultantExperience" min="0"
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    placeholder="5">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Consultation Fee
+                                    (₹)</label>
+                                <input type="number" id="consultantFee" min="0"
+                                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                    placeholder="500">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Expertise Areas
+                                (comma-separated)</label>
+                            <input type="text" id="consultantExpertise"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                placeholder="Career Counseling, Resume Review">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Languages
+                                (comma-separated)</label>
+                            <input type="text" id="consultantLanguages"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                placeholder="Hindi, English">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">Professional Bio</label>
+                            <textarea id="consultantBio" rows="3"
+                                class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                placeholder="Brief description of your expertise..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-slate-700 mb-1">Password</label>
+                <input type="password" id="password" required
+                    class="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    placeholder="••••••••">
+            </div>
+            <div class="flex items-center space-x-2 py-2">
+                <input type="checkbox" required class="w-4 h-4 rounded text-blue-600">
+                <span class="text-xs text-slate-500">I agree to the Terms and Privacy Policy</span>
+            </div>
+            <button type="submit"
+                class="w-full gradient-bg text-white font-bold py-4 rounded-xl shadow-lg hover:scale-[1.02] transition-all mt-4">Create
+                Account</button>
+        </form>
+
+        <p class="text-center mt-8 text-slate-600">
+            Already have an account? <a href="login.html" class="text-blue-600 font-bold hover:underline">Login</a>
+        </p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const role = params.get('role');
+            if (role) setRole(role);
+        });
+
+        function setRole(role) {
+            document.getElementById('role').value = role;
+            const userBtn = document.getElementById('role-user');
+            const employerBtn = document.getElementById('role-employer');
+            const consultantBtn = document.getElementById('role-consultant');
+            const employerFields = document.getElementById('employer-fields');
+            const consultantFields = document.getElementById('consultant-fields');
+
+            // Reset all buttons
+            userBtn.className = "py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 transition-all";
+            employerBtn.className = "py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 transition-all";
+            consultantBtn.className = "py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-slate-700 transition-all";
+
+            // Hide all role-specific fields
+            employerFields.classList.add('hidden');
+            consultantFields.classList.add('hidden');
+            document.getElementById('companyName').required = false;
+
+            // Activate selected role
+            if (role === 'user') {
+                userBtn.className = "py-2 rounded-xl text-sm font-bold bg-white shadow-sm border border-slate-200";
+            } else if (role === 'employer') {
+                employerBtn.className = "py-2 rounded-xl text-sm font-bold bg-white shadow-sm border border-slate-200";
+                employerFields.classList.remove('hidden');
+                document.getElementById('companyName').required = true;
+            } else if (role === 'consultant') {
+                consultantBtn.className = "py-2 rounded-xl text-sm font-bold bg-white shadow-sm border border-slate-200";
+                consultantFields.classList.remove('hidden');
+            }
+        }
+
+        document.getElementById('signupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const role = document.getElementById('role').value;
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            const payload = { role, name, email, password };
+            if (role === 'employer') {
+                payload.companyName = document.getElementById('companyName').value;
+                payload.website = document.getElementById('website').value;
+                payload.gst = document.getElementById('gst').value;
+            } else if (role === 'consultant') {
+                payload.consultantData = {
+                    experience: parseInt(document.getElementById('consultantExperience').value) || 0,
+                    fee: parseInt(document.getElementById('consultantFee').value) || 0,
+                    expertise: document.getElementById('consultantExpertise').value.split(',').map(s => s.trim()).filter(s => s),
+                    languages: document.getElementById('consultantLanguages').value.split(',').map(s => s.trim()).filter(s => s),
+                    bio: document.getElementById('consultantBio').value
+                };
+            }
+
+            try {
+                const response = await fetch('http://localhost:5000/api/users/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('userRole', data.user.role);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    if (data.user.role === 'admin') window.location.href = 'admin.html';
+                    else if (data.user.role === 'employer') window.location.href = 'employer.html';
+                    else if (data.user.role === 'consultant') window.location.href = 'consultant.html';
+                    else window.location.href = 'dashboard.html';
+                }
+                else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                alert('Connection error. Is the backend running?');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultant Dashboard | CareerBridge-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: { blue: '#2563eb', green: '#10b981', dark: '#0f172a' } }
+                }
+            }
+        }
+    </script>
+    <!-- GSAP for Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Vanilla Tilt for 3D Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+
+    <style>
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+
+        .nav-item {
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            background: rgba(37, 99, 235, 0.1);
+            color: #2563eb;
+            font-weight: 700;
+            border-right: 4px solid #2563eb;
+        }
+
+        .section-view {
+            opacity: 0;
+            display: none;
+        }
+
+        .section-view.active {
+            display: block;
+        }
+
+        .gradient-mesh {
+            background-color: #f8fafc;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(225, 39%, 30%, 0.05) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(225, 39%, 10%, 0.05) 0, transparent 50%);
+        }
+
+        [data-tilt] {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+        }
+    </style>
+</head>
+
+<body class="gradient-mesh text-brand-dark antialiased flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-72 glass-sidebar sticky top-0 h-screen flex flex-col p-6 overflow-y-auto">
+        <div class="flex items-center space-x-2 mb-10 px-2">
+            <div
+                class="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-green rounded-lg flex items-center justify-center text-white text-xs">
+                <i class="fas fa-bridge"></i>
+            </div>
+            <span class="text-xl font-bold">CareerBridge<span class="text-brand-blue">-AI</span></span>
+        </div>
+
+        <nav class="flex-1 space-y-1">
+            <button onclick="showSection('overview')" id="nav-overview"
+                class="nav-item active w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-gauge-high w-5"></i><span>Overview</span>
+            </button>
+            <button onclick="showSection('onboarding')" id="nav-onboarding"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-id-card w-5"></i><span>Professional Profile</span>
+            </button>
+            <button onclick="showSection('appointments')" id="nav-appointments"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-calendar-alt w-5"></i><span>Appointments</span>
+            </button>
+            <button onclick="showSection('availability')" id="nav-availability"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-clock w-5"></i><span>Availability</span>
+            </button>
+            <button onclick="showSection('history')" id="nav-history"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-history w-5"></i><span>Session History</span>
+            </button>
+        </nav>
+
+        <div class="mt-6 pt-6 border-t border-slate-100">
+            <button onclick="logout()"
+                class="flex items-center space-x-3 p-3 text-red-500 hover:bg-red-50 w-full rounded-xl transition-all">
+                <i class="fas fa-right-from-bracket w-5"></i><span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-10 overflow-y-auto h-screen">
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold" id="page-title">Consultant Dashboard</h1>
+                <p class="text-slate-500 mt-1" id="page-subtitle">Expert Portal Access</p>
+            </div>
+            <div class="flex items-center space-x-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100">
+                <span class="w-2 h-2 rounded-full bg-brand-green"></span>
+                <span id="consultant-status" class="text-xs font-bold text-slate-600">Checking Status...</span>
+            </div>
+        </header>
+
+        <!-- 1. Overview -->
+        <section id="view-overview" class="section-view active">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Upcoming</p>
+                    <div class="text-3xl font-black text-brand-blue" id="stat-upcoming">0</div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Total Consults</p>
+                    <div class="text-3xl font-black text-slate-900" id="stat-total">0</div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Earnings</p>
+                    <div class="text-3xl font-black text-brand-green" id="stat-earnings">₹0</div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Avg Rating</p>
+                    <div class="text-3xl font-black text-orange-500" id="stat-rating">0.0</div>
+                </div>
+            </div>
+            <div id="status-alert"
+                class="hidden p-6 glass-card border-orange-200 bg-orange-50/30 rounded-3xl mb-10 flex items-center space-x-4">
+                <i class="fas fa-clock text-orange-400 text-2xl"></i>
+                <div class="text-orange-800 font-bold">Your profile is currently pending admin approval. You cannot
+                    accept new appointments yet.</div>
+            </div>
+            <div class="glass-card p-8 rounded-3xl shadow-sm border border-slate-100">
+                <h2 class="text-xl font-bold mb-6">Recent Appointments</h2>
+                <div id="recent-list" class="space-y-4">
+                    <p class="text-slate-400 italic">No recent appointments found.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Onboarding / Profile -->
+        <section id="view-onboarding" class="section-view">
+            <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 max-w-4xl">
+                <h2 class="text-2xl font-bold mb-8">Consultant Professional Profile</h2>
+                <form id="onboardForm" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Expertise Domains (Comma Separated)</label>
+                        <input type="text" id="expert-expertise" placeholder="e.g. IT & Software, Govt Jobs"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"
+                            required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Years of Experience</label>
+                        <input type="number" id="expert-exp"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"
+                            required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Consultation Fee (₹ per session)</label>
+                        <input type="number" id="expert-fee"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"
+                            required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Languages</label>
+                        <input type="text" id="expert-lang" placeholder="e.g. Hindi, English"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"
+                            required>
+                    </div>
+                    <div class="col-span-full space-y-2">
+                        <label class="font-bold text-slate-700">Professional Bio</label>
+                        <textarea id="expert-bio" rows="4"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"
+                            required></textarea>
+                    </div>
+                    <div class="col-span-full">
+                        <button type="submit" id="onboard-btn"
+                            class="w-full bg-brand-blue text-white font-black p-5 rounded-3xl shadow-xl hover:scale-[1.01] transition-all">Submit
+                            Profile for Verification</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. Appointments List -->
+        <section id="view-appointments" class="section-view">
+            <h2 class="text-2xl font-bold mb-8 text-slate-900">Active & Upcoming Appointments</h2>
+            <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Seeker Name</th>
+                            <th class="p-6">Scheduled For</th>
+                            <th class="p-6">Mode</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="appointments-table">
+                        <!-- Injected -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 3.1 Session History -->
+        <section id="view-history" class="section-view">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-2xl font-bold text-slate-900">Consultation History & Feedback</h2>
+                <div class="flex space-x-2">
+                    <button onclick="loadHistory('completed')" class="px-4 py-2 bg-brand-green text-white rounded-xl text-xs font-bold shadow-sm">Completed</button>
+                    <button onclick="loadHistory('cancelled')" class="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold shadow-sm">Cancelled</button>
+                    <button onclick="loadHistory('all')" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm">All History</button>
+                </div>
+            </div>
+            <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Seeker Name</th>
+                            <th class="p-6">Completion Date</th>
+                            <th class="p-6">Brief Overview</th>
+                            <th class="p-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table">
+                        <!-- Injected -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Availability Section -->
+        <section id="view-availability" class="section-view">
+            <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 max-w-4xl">
+                <h2 class="text-2xl font-bold mb-8">Manage Weekly Availability</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="availability-grid">
+                    <!-- Days injected here -->
+                </div>
+                <div class="mt-8 pt-8 border-t border-slate-100 flex justify-end">
+                    <button onclick="saveAvailability()" id="save-avail-btn"
+                        class="bg-brand-blue text-white font-black py-4 px-10 rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-blue-100 flex items-center space-x-2">
+                        <span>Save Weekly Schedule</span>
+                        <i class="fas fa-save"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. LIVE CONSULTATION PANEL (MODAL) -->
+        <div id="live-panel" class="hidden fixed inset-0 z-50 bg-brand-dark/95 flex items-center justify-center p-10">
+            <div class="bg-white w-full h-full rounded-[3rem] overflow-hidden flex flex-col md:flex-row">
+                <!-- Seeker Brief (Left) -->
+                <div class="w-full md:w-1/3 p-10 border-r border-slate-100 overflow-y-auto">
+                    <button onclick="closeLivePanel()"
+                        class="mb-10 text-slate-400 hover:text-red-500 font-bold uppercase text-xs tracking-widest flex items-center space-x-2">
+                        <i class="fas fa-times"></i><span>End Session</span>
+                    </button>
+                    <h3 class="text-2xl font-black mb-8">User Brief</h3>
+                    <div id="user-profile-view" class="space-y-6">
+                        <!-- Profile injected -->
+                        <div class="animate-pulse flex flex-col space-y-4">
+                            <div class="h-4 bg-slate-100 rounded w-3/4"></div>
+                            <div class="h-4 bg-slate-100 rounded w-1/2"></div>
+                            <div class="h-20 bg-slate-100 rounded"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Recommendations (Right) -->
+                <div class="flex-1 p-10 flex flex-col bg-slate-50 overflow-y-auto">
+                    <h3 class="text-2xl font-black mb-6">Expert Consultation Notes</h3>
+                    <p class="text-sm text-slate-500 mb-8 font-medium italic">These notes will be directly injected into
+                        the seeker's roadmap and profile dashboard.</p>
+
+                    <form id="feedbackForm" class="flex-1 flex flex-col space-y-6">
+                        <div class="space-y-2">
+                            <label class="font-bold text-xs uppercase text-slate-400 tracking-wider">Career
+                                Suggestions</label>
+                            <textarea id="feed-suggestions"
+                                class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                                placeholder="e.g. Focus on cloud security specialized for fintech..."></textarea>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="space-y-2">
+                                <label class="font-bold text-xs uppercase text-slate-400 tracking-wider">Skill
+                                    Improvements (Comma Sep)</label>
+                                <input type="text" id="feed-skills"
+                                    class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                                    placeholder="AWS, Kubernetes, Go">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="font-bold text-xs uppercase text-slate-400 tracking-wider">Learning
+                                    Resources (URLs)</label>
+                                <input type="text" id="feed-resources"
+                                    class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                                    placeholder="https://coursera.org/...">
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="font-bold text-xs uppercase text-slate-400 tracking-wider">Resume
+                                Feedback</label>
+                            <textarea id="feed-resume"
+                                class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                                placeholder="Quantify your achievements with % metrics..."></textarea>
+                        </div>
+                        <div class="mt-auto">
+                            <input type="hidden" id="feed-session-id">
+                            <button type="submit"
+                                class="w-full bg-brand-green text-white font-black p-5 rounded-3xl shadow-xl shadow-green-100">Submit
+                                Consultation & Log Output</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Summary Modal -->
+        <div id="summary-modal"
+            class="hidden fixed inset-0 z-[60] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-6">
+            <div
+                class="bg-white max-w-2xl w-full rounded-[2.5rem] shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                <div class="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                    <div class="flex items-center space-x-3">
+                        <div
+                            class="w-10 h-10 bg-brand-blue/10 rounded-xl flex items-center justify-center text-brand-blue">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold">AI Session Summary</h3>
+                    </div>
+                    <button onclick="closeSummaryModal()" class="text-slate-400 hover:text-slate-600 transition-all">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+                <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto" id="summary-content">
+                    <!-- Summary content injected here -->
+                </div>
+                <div class="p-6 bg-slate-50 border-t border-slate-100 text-center">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Powered by CareerBridge AI
+                        Engine</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        let myConsultantProfile = null;
+
+        async function init() {
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.status === 404 || res.status === 403) {
+                    showSection('onboarding');
+                } else if (res.ok) {
+                    myConsultantProfile = await res.json();
+                    renderConsultantState();
+                    loadDashboardStats();
+
+                    // Entrance Animations
+                    gsap.from("aside", { x: -50, opacity: 0, duration: 1, ease: "power4.out" });
+                    gsap.from("header", { y: -30, opacity: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
+                    gsap.from(".section-view.active > *", { y: 20, opacity: 0, duration: 0.8, delay: 0.4, stagger: 0.05, ease: "power2.out" });
+
+                    // Initialize Tilt
+                    if (typeof VanillaTilt !== 'undefined') {
+                        VanillaTilt.init(document.querySelectorAll("[data-tilt]"), {
+                            max: 5,
+                            speed: 400,
+                            glare: true,
+                            "max-glare": 0.1,
+                        });
+                    }
+                } else {
+                    alert("Auth Error or Access Denied");
+                    window.location.href = 'login.html';
+                }
+            } catch (err) { console.error('Init error', err); }
+        }
+
+        function renderConsultantState() {
+            const statusLabel = document.getElementById('consultant-status');
+            const alertBox = document.getElementById('status-alert');
+
+            if (myConsultantProfile.status === 'pending') {
+                statusLabel.innerText = "Pending Approval";
+                statusLabel.className = "text-xs font-bold text-orange-500";
+                alertBox.classList.remove('hidden');
+
+                // ── Disable all session action buttons when pending ──────────
+                // Sessions load hone ke baad bhi disable rahein
+                window.__consultantPending = true;
+                // ────────────────────────────────────────────────────────────
+            } else if (myConsultantProfile.status === 'approved') {
+                statusLabel.innerText = "Verified Expert";
+                statusLabel.className = "text-xs font-bold text-brand-green";
+                alertBox.classList.add('hidden');
+                document.getElementById('onboard-btn').innerText = "Update Professional Profile";
+                window.__consultantPending = false;
+            }
+
+            // Fill form
+            document.getElementById('expert-expertise').value = myConsultantProfile.expertise.join(', ');
+            document.getElementById('expert-exp').value = myConsultantProfile.experience;
+            document.getElementById('expert-fee').value = myConsultantProfile.fee;
+            document.getElementById('expert-lang').value = myConsultantProfile.languages.join(', ');
+            document.getElementById('expert-bio').value = myConsultantProfile.bio;
+        }
+
+        async function loadDashboardStats() {
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/dashboard-stats', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const stats = await res.json();
+                document.getElementById('stat-upcoming').innerText = stats.upcomingSessions;
+                document.getElementById('stat-total').innerText = stats.totalConsultations;
+                document.getElementById('stat-earnings').innerText = '₹' + stats.totalEarnings;
+                document.getElementById('stat-rating').innerText = stats.rating.toFixed(1);
+            } catch (err) { console.error('Stats error'); }
+        }
+
+        let loadedSessions = [];
+        async function loadSessions() {
+            const tbody = document.getElementById('appointments-table');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center italic text-slate-400">Loading appointments...</td></tr>';
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/sessions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sessions = await res.json();
+                loadedSessions = sessions;
+                tbody.innerHTML = '';
+
+                const activeSessions = sessions.filter(s => s.status !== 'completed' && s.status !== 'cancelled');
+
+                if (activeSessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center italic text-slate-400">No active appointments found.</td></tr>';
+                    return;
+                }
+
+                activeSessions.forEach(s => {
+                    const scheduledDate = new Date(s.slot.startTime).toLocaleDateString() + ' ' + new Date(s.slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const statusClass = s.status === 'scheduled' ? 'bg-blue-50 text-brand-blue' : (s.status === 'in-progress' ? 'bg-orange-50 text-orange-500' : 'bg-red-50 text-red-500');
+
+                    tbody.innerHTML += `
+                        <tr class="border-t border-slate-50 hover:bg-slate-50 transition-all">
+                            <td class="p-6 font-bold text-slate-700">${s.userId.name}</td>
+                            <td class="p-6 text-slate-500 text-sm font-medium">${scheduledDate}</td>
+                            <td class="p-6 text-xs uppercase font-bold text-slate-400">${s.mode}</td>
+                            <td class="p-6"><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}">${s.status}</span></td>
+                            <td class="p-6">
+                                ${s.status === 'scheduled' || s.status === 'in-progress' ?
+                            `<button onclick="startLiveConsult('${s._id}', '${s.userId._id}', '${s.roomId}')" class="bg-brand-blue text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase shadow-lg shadow-blue-100 flex items-center space-x-2">
+                                <i class="fas fa-video"></i>
+                                <span>${s.status === 'in-progress' ? 'Resume Call' : 'Start Calling'}</span>
+                            </button>` :
+                            `<span class="text-[10px] font-black text-slate-300">N/A</span>`
+                        }
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { tbody.innerHTML = 'Error loading sessions'; }
+        }
+
+        async function loadHistory(statusFilter = 'completed') {
+            const tbody = document.getElementById('history-table');
+            tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center italic text-slate-400">Loading history...</td></tr>';
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/sessions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sessions = await res.json();
+                tbody.innerHTML = '';
+
+                let filteredSessions = sessions.filter(s => s.status === 'completed' || s.status === 'cancelled');
+                
+                if (statusFilter !== 'all') {
+                    filteredSessions = filteredSessions.filter(s => s.status === statusFilter);
+                }
+
+                if (filteredSessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center italic text-slate-400">No sessions found for this filter.</td></tr>';
+                    return;
+                }
+
+                filteredSessions.forEach(s => {
+                    const completionDate = new Date(s.updatedAt || s.slot.startTime).toLocaleDateString();
+                    const briefSnippet = s.notes?.suggestions ? (s.notes.suggestions.substring(0, 30) + '...') : (s.status === 'cancelled' ? 'Cancelled session' : 'No brief');
+                    const statusClass = s.status === 'completed' ? 'bg-green-50 text-brand-green' : 'bg-red-50 text-red-500';
+
+                    tbody.innerHTML += `
+                        <tr class="border-t border-slate-50 hover:bg-slate-50 transition-all">
+                            <td class="p-6 font-bold text-slate-700">
+                                ${s.userId.name} 
+                                <span class="ml-2 px-2 py-1 rounded-full text-[8px] font-black uppercase ${statusClass}">${s.status}</span>
+                            </td>
+                            <td class="p-6 text-slate-500 text-sm font-medium">${completionDate}</td>
+                            <td class="p-6 text-xs text-slate-400 font-medium italic">"${briefSnippet}"</td>
+                            <td class="p-6">
+                                ${s.status === 'completed' ? `<button onclick="viewSummary('${s._id}')" class="bg-slate-100 text-brand-blue px-4 py-2 rounded-xl text-[10px] font-black uppercase hover:bg-brand-blue hover:text-white transition-all">View Full Output</button>` : `<span class="text-[10px] font-black text-slate-300">N/A</span>`}
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { tbody.innerHTML = 'Error loading history'; }
+        }
+
+        function showSection(name) {
+            const current = document.querySelector('.section-view.active');
+            const target = document.getElementById('view-' + name);
+            const nav = document.getElementById('nav-' + name);
+
+            if (current && current !== target) {
+                gsap.to(current, {
+                    opacity: 0, y: 10, duration: 0.2, onComplete: () => {
+                        current.classList.remove('active');
+                        if (target) {
+                            target.classList.add('active');
+                            gsap.fromTo(target, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
+                        }
+                    }
+                });
+            } else if (target) {
+                target.classList.add('active');
+                gsap.to(target, { opacity: 1, y: 0, duration: 0.3 });
+            }
+
+            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+            if (nav) nav.classList.add('active');
+
+            if (name === 'appointments') loadSessions();
+            if (name === 'availability') loadAvailability();
+            if (name === 'history') loadHistory();
+        }
+
+        const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+        let currentAvailability = [];
+
+        async function loadAvailability() {
+            try {
+                const availRes = await fetch(`http://localhost:5000/api/consultants/${myConsultantProfile._id}/availability`);
+                const data = await availRes.json();
+                currentAvailability = data || [];
+
+                renderAvailabilityEditor();
+            } catch (err) { console.error('Error loading availability'); }
+        }
+
+        function renderAvailabilityEditor() {
+            const container = document.getElementById('availability-grid');
+            container.innerHTML = daysOfWeek.map(day => {
+                const dayData = currentAvailability.find(d => d.day === day) || { day, slots: [] };
+
+                return `
+                    <div class="bg-slate-50 border border-slate-100 rounded-[2rem] p-8 hover:border-brand-blue/20 transition-all group">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-black text-slate-900">${day}</h3>
+                            <button onclick="addSlot('${day}')" class="w-8 h-8 bg-brand-blue text-white rounded-lg flex items-center justify-center hover:scale-110 transition-all shadow-sm"><i class="fas fa-plus text-xs"></i></button>
+                        </div>
+                        <div class="space-y-3" id="slots-${day}">
+                            ${dayData.slots.length === 0 ? '<p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest italic py-4">No active slots</p>' : ''}
+                            ${dayData.slots.map((slot, idx) => `
+                                <div class="flex items-center space-x-2 bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                                    <input type="time" value="${slot.start}" onchange="updateSlot('${day}', ${idx}, 'start', this.value)" class="bg-transparent border-none outline-none text-xs font-bold text-slate-600">
+                                    <span class="text-slate-300 font-black text-xs">→</span>
+                                    <input type="time" value="${slot.end}" onchange="updateSlot('${day}', ${idx}, 'end', this.value)" class="bg-transparent border-none outline-none text-xs font-bold text-slate-600">
+                                    <button onclick="removeSlot('${day}', ${idx})" class="text-red-400 hover:text-red-600 transition-all px-2"><i class="fas fa-trash-alt text-xs"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function addSlot(day) {
+            let dayData = currentAvailability.find(d => d.day === day);
+            if (!dayData) {
+                dayData = { day, slots: [] };
+                currentAvailability.push(dayData);
+            }
+            dayData.slots.push({ start: '09:00', end: '10:00' });
+            renderAvailabilityEditor();
+        }
+
+        function removeSlot(day, idx) {
+            const dayData = currentAvailability.find(d => d.day === day);
+            if (dayData) {
+                dayData.slots.splice(idx, 1);
+                renderAvailabilityEditor();
+            }
+        }
+
+        function updateSlot(day, idx, field, value) {
+            const dayData = currentAvailability.find(d => d.day === day);
+            if (dayData) {
+                dayData.slots[idx][field] = value;
+            }
+        }
+
+        function viewSummary(sessionId) {
+            const session = loadedSessions.find(s => s._id === sessionId);
+            if (!session) return;
+
+            const content = document.getElementById('summary-content');
+            const s = session.aiSummary || { summary: "No AI summary generated.", keyTopics: [], actionItems: [] };
+            const n = session.notes || { suggestions: "None", skillImprovements: [], learningResources: [], resumeFeedback: "None" };
+
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Expert Brief Section -->
+                    <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100">
+                        <h4 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Expert Consultation Brief</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <p class="text-[10px] font-bold text-slate-400 uppercase">Career Suggestions</p>
+                                <p class="text-slate-700 font-medium">${n.suggestions}</p>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase">Skill Improvements</p>
+                                    <div class="flex flex-wrap gap-2 mt-1">
+                                        ${(n.skillImprovements || []).map(sk => `<span class="bg-white px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 border border-slate-200">${sk}</span>`).join('')}
+                                        ${(n.skillImprovements || []).length === 0 ? '<span class="text-[10px] text-slate-400 italic">None</span>' : ''}
+                                    </div>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase">Resume Feedback</p>
+                                    <p class="text-slate-700 text-xs font-medium">${n.resumeFeedback}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Insights Section -->
+                    <div class="p-6 bg-blue-50/50 rounded-3xl border border-blue-100">
+                        <h4 class="text-xs font-black text-brand-blue uppercase mb-3 tracking-widest">AI Engine Insights</h4>
+                        <p class="text-slate-700 leading-relaxed font-medium text-sm mb-4">${s.summary}</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-4 bg-white/60 rounded-2xl border border-blue-100">
+                                <h4 class="text-[10px] font-black text-brand-blue uppercase mb-2 tracking-wider">Key Topics</h4>
+                                <ul class="space-y-1">
+                                    ${(s.keyTopics || []).map(t => `<li class="text-slate-700 text-[10px] font-bold flex items-center"><span class="w-1 h-1 bg-brand-blue rounded-full mr-2"></span>${t}</li>`).join('')}
+                                </ul>
+                            </div>
+                            <div class="p-4 bg-white/60 rounded-2xl border border-blue-100">
+                                <h4 class="text-[10px] font-black text-brand-blue uppercase mb-2 tracking-wider">Recommendations</h4>
+                                <ul class="space-y-1">
+                                    ${(s.actionItems || []).map(t => `<li class="text-slate-700 text-[10px] font-bold flex items-center"><span class="w-1 h-1 bg-brand-blue rounded-full mr-2"></span>${t}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('summary-modal').classList.remove('hidden');
+            gsap.from("#summary-modal > div", { y: 20, opacity: 0, duration: 0.4, ease: "back.out(1.7)" });
+        }
+
+        function closeSummaryModal() {
+            gsap.to("#summary-modal > div", {
+                y: -20, opacity: 0, duration: 0.2, onComplete: () => {
+                    document.getElementById('summary-modal').classList.add('hidden');
+                    gsap.set("#summary-modal > div", { y: 0, opacity: 1 });
+                }
+            });
+        }
+
+        async function saveAvailability() {
+            const btn = document.getElementById('save-avail-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span>Saving...</span><i class="fas fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/availability', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ availability: currentAvailability })
+                });
+                if (res.ok) {
+                    alert('Schedule saved successfully!');
+                } else {
+                    const d = await res.json();
+                    alert('Error: ' + d.message);
+                }
+            } catch (err) { alert('Error saving schedule'); }
+            finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        document.getElementById('onboardForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                expertise: document.getElementById('expert-expertise').value.split(',').map(s => s.trim()),
+                experience: parseInt(document.getElementById('expert-exp').value),
+                fee: parseInt(document.getElementById('expert-fee').value),
+                languages: document.getElementById('expert-lang').value.split(',').map(s => s.trim()),
+                bio: document.getElementById('expert-bio').value
+            };
+
+            try {
+                const res = await fetch('http://localhost:5000/api/consultants/onboard', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('Profile submitted successfully! Please wait for admin verification.');
+                    window.location.reload();
+                } else {
+                    const d = await res.json(); alert(d.message);
+                }
+            } catch (err) { alert('Submission failed'); }
+        });
+
+        async function startLiveConsult(sessionId, userId, roomId) {
+            // ── Pending approval check ────────────────────────────────────────
+            if (window.__consultantPending) {
+                alert('⚠️ Aapka account abhi admin approval ke wait me hai. Approved hone ke baad hi sessions start kar sakte ho.');
+                return;
+            }
+            // ─────────────────────────────────────────────────────────────────
+            // Open Video Room
+            window.open(`session.html?roomId=${roomId}&userId=${myConsultantProfile.userId}`, '_blank');
+
+            // Open Notes Modal
+            document.getElementById('live-panel').classList.remove('hidden');
+            document.getElementById('feed-session-id').value = sessionId;
+            const profileView = document.getElementById('user-profile-view');
+            profileView.innerHTML = '<div class="text-slate-400 italic">Syncing seeker profile...</div>';
+
+            // In a real app, this would use the /me endpoint or similar but for the seeker
+            // We simulate a fetch of user data by the consultant
+            try {
+                // Consultants have limited view of user profile
+                const res = await fetch(`http://localhost:5000/api/users/me`, { // Simulation: in production this needs a specific secure per-session endpoint
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const user = await res.json();
+                profileView.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                            <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Seeker Name</p>
+                            <p class="font-black text-slate-900">${user.name}</p>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                             <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Education</p>
+                            <p class="font-bold text-slate-700">${user.education?.qualification || 'None'}</p>
+                            <p class="text-xs text-slate-400">${user.education?.stream || ''}</p>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                             <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">Current Skills</p>
+                            <div class="flex flex-wrap gap-2">
+                                ${user.skills.map(s => `<span class="bg-white px-3 py-1 rounded-lg text-[10px] font-bold">${s}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                             <p class="text-[10px] font-bold text-slate-400 uppercase mb-1">AI Risk Distribution</p>
+                             <div class="text-xl font-black text-red-500">${user.unemploymentRisk}%</div>
+                             <p class="text-[10px] text-slate-400">Seeker is at high risk due to skill gaps.</p>
+                        </div>
+                    </div>
+                `;
+            } catch (e) { profileView.innerHTML = 'Error loading brief.'; }
+        }
+
+        function closeLivePanel() {
+            if (confirm("End consultation session? Unsaved notes will be lost.")) {
+                document.getElementById('live-panel').classList.add('hidden');
+            }
+        }
+
+        document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const sid = document.getElementById('feed-session-id').value;
+            const payload = {
+                suggestions: document.getElementById('feed-suggestions').value,
+                skillImprovements: document.getElementById('feed-skills').value.split(',').map(s => s.trim()),
+                learningResources: document.getElementById('feed-resources').value.split(',').map(s => s.trim()),
+                resumeFeedback: document.getElementById('feed-resume').value
+            };
+
+            try {
+                const res = await fetch(`http://localhost:5000/api/consultants/sessions/${sid}/complete`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert('Session Output Successfully Logged to Seeker Profile.');
+                    document.getElementById('live-panel').classList.add('hidden');
+                    loadSessions();
+                } else {
+                    alert('Submission error');
+                }
+            } catch (e) { alert('Network error'); }
+        });
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        init();
+    </script>
+
+</body>
+
+</html>

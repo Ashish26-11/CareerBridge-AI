@@ -1,0 +1,2261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | CareerBridge-AI</title>
+    <!-- Razorpay Checkout -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: { brand: { blue: '#2563eb', green: '#10b981', dark: '#0f172a' } }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+        }
+
+        .glass-sidebar {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid #e2e8f0;
+        }
+
+        .nav-item {
+            transition: all 0.2s;
+        }
+
+        .nav-item.active {
+            background: #eff6ff;
+            color: #2563eb;
+            font-weight: 700;
+            border-right: 4px solid #2563eb;
+        }
+
+        .section-view {
+    opacity: 0;
+    display: none;
+}
+
+.section-view.active {
+    display: block;
+    opacity: 1; 
+}
+        .gradient-mesh {
+            background-color: #f8fafc;
+            background-image:
+                radial-gradient(at 0% 0%, hsla(225, 39%, 30%, 0.05) 0, transparent 50%),
+                radial-gradient(at 100% 0%, hsla(225, 39%, 10%, 0.05) 0, transparent 50%);
+        }
+
+        [data-tilt] {
+            transform-style: preserve-3d;
+            transform: perspective(1000px);
+        }
+    </style>
+</head>
+
+<body class="gradient-mesh text-brand-dark antialiased flex min-h-screen">
+
+    <!-- Session Details Modal -->
+    <div id="session-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] p-8 max-w-2xl w-full relative shadow-2xl overflow-y-auto max-h-[90vh]">
+            <button onclick="closeSessionModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500"><i
+                    class="fas fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-2">Session Summary</h2>
+            <p class="text-slate-500 mb-6" id="session-modal-consultant">Consultant Feedback & AI Insights</p>
+
+            <div class="space-y-6">
+                <!-- AI Summary Card -->
+                <div class="bg-blue-50/50 p-6 rounded-3xl border border-blue-100">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <i class="fas fa-robot text-brand-blue"></i>
+                        <span class="text-xs font-black uppercase text-brand-blue tracking-wider">AI Automated
+                            Summary</span>
+                    </div>
+                    <p class="text-sm text-slate-700 leading-relaxed font-medium" id="session-ai-summary">Generating AI
+                        summary...</p>
+                    <div id="session-ai-topics" class="flex flex-wrap gap-2 mt-4"></div>
+                </div>
+
+                <!-- Consultant Notes -->
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <label class="font-black text-[10px] uppercase text-slate-400 block mb-2">Suggestions</label>
+                        <p class="text-sm text-slate-600" id="session-suggestions">No suggestions provided.</p>
+                    </div>
+                    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                        <label class="font-black text-[10px] uppercase text-slate-400 block mb-2">Resume
+                            Feedback</label>
+                        <p class="text-sm text-slate-600" id="session-resume-feedback">No feedback provided.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <label class="font-black text-[10px] uppercase text-slate-400 block mb-2">Skill Improvements</label>
+                    <div id="session-skills" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                    <label class="font-black text-[10px] uppercase text-slate-400 block mb-2">Learning Resources</label>
+                    <div id="session-resources" class="space-y-1"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="w-72 glass-sidebar sticky top-0 h-screen flex flex-col p-6 overflow-y-auto">
+        <div class="flex items-center space-x-2 mb-10 px-2">
+            <div
+                class="w-8 h-8 bg-gradient-to-br from-brand-blue to-brand-green rounded-lg flex items-center justify-center text-white text-xs">
+                <i class="fas fa-bridge"></i>
+            </div>
+            <span class="text-xl font-bold">CareerBridge<span class="text-brand-blue">-AI</span></span>
+        </div>
+
+        <nav class="flex-1 space-y-1">
+            <a href="index.html"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all">
+                <i class="fas fa-home w-5"></i><span>Home</span>
+            </a>
+            <button onclick="showSection('overview')" id="nav-overview"
+                class="nav-item active w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-gauge-high w-5"></i><span>Overview</span>
+            </button>
+            <button onclick="showSection('profile')" id="nav-profile"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-user w-5"></i><span>My Profile</span>
+            </button>
+            <button onclick="showSection('insights')" id="nav-insights"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-lightbulb w-5"></i><span>Career Insights</span>
+            </button>
+            <button onclick="showSection('roadmap')" id="nav-roadmap"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-route w-5"></i><span>Skills Roadmap</span>
+            </button>
+            <button onclick="showSection('learning')" id="nav-learning"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-book-open w-5"></i><span>Learning Hub</span>
+            </button>
+            <button onclick="showSection('jobs')" id="nav-jobs"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-briefcase w-5"></i><span>Job Portal</span>
+            </button>
+            <button onclick="showSection('applications')" id="nav-applications"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-file-alt w-5"></i><span>My Applications</span>
+            </button>
+            <button onclick="showSection('schemes')" id="nav-schemes"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-landmark w-5"></i><span>Govt Schemes</span>
+            </button>
+            <button onclick="showSection('simulation')" id="nav-simulation"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-vr-cardboard w-5"></i><span>Career Simulation</span>
+            </button>
+            <button onclick="showSection('risk')" id="nav-risk"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-shield-virus w-5"></i><span>Unemployment Risk</span>
+            </button>
+            <button onclick="showSection('employability')" id="nav-employability"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-star w-5"></i><span>Employability Score</span>
+                <span class="ml-auto px-2 py-0.5 bg-purple-100 text-purple-700 text-[8px] font-black rounded uppercase">NEW</span>
+            </button>
+            <button onclick="showSection('consultants')" id="nav-consultants"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-user-tie w-5"></i><span>Career Consultants</span>
+            </button>
+            <button onclick="showSection('my-sessions')" id="nav-my-sessions"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-calendar-check w-5"></i><span>My Sessions</span>
+            </button>
+            <button onclick="showSection('chat')" id="nav-chat"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-comment-dots w-5"></i><span>AI Assistant</span>
+            </button>
+            <a href="interview-simulator.html"
+                class="w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all hover:text-brand-blue">
+                <i class="fas fa-microphone-alt w-5"></i><span class="font-bold">AI Interview</span>
+                <span
+                    class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-[8px] font-black rounded uppercase">Premium</span>
+            </a>
+            <button onclick="showSection('settings')" id="nav-settings"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-cog w-5"></i><span>Settings</span>
+            </button>
+        </nav>
+
+        <div class="mt-6 pt-6 border-t border-slate-100">
+            <button onclick="logout()"
+                class="flex items-center space-x-3 p-3 text-red-500 hover:bg-red-50 w-full rounded-xl transition-all">
+                <i class="fas fa-right-from-bracket w-5"></i><span>Logout</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="hidden fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] p-8 max-w-lg w-full relative shadow-2xl">
+            <button onclick="closeBookingModal()" class="absolute top-6 right-6 text-slate-400 hover:text-red-500"><i
+                    class="fas fa-times text-xl"></i></button>
+            <h2 class="text-2xl font-bold mb-2">Book Appointment</h2>
+            <p class="text-slate-500 mb-6">Select a time slot for <span id="booking-consultant-name"
+                    class="font-bold text-brand-blue">Consultant</span></p>
+
+            <div class="space-y-4 mb-6">
+                <div>
+                    <label class="font-bold text-xs uppercase text-slate-400">Date</label>
+                    <input type="date" id="booking-date"
+                        class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 mt-1"
+                        onchange="loadBookingSlots()">
+                </div>
+                <div>
+                    <label class="font-bold text-xs uppercase text-slate-400">Available Slots</label>
+                    <div id="booking-slots" class="grid grid-cols-3 gap-2 mt-2">
+                        <div class="col-span-3 text-center text-slate-400 italic text-sm p-4">Select a date first</div>
+                    </div>
+                </div>
+                <div>
+                    <label class="font-bold text-xs uppercase text-slate-400">Session Mode</label>
+                    <select id="booking-mode" class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 mt-1">
+                        <option value="video">Video Call (Recommended)</option>
+                        <option value="audio">Audio Call</option>
+                        <option value="chat">Chat Session</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-100 pt-6">
+                <div>
+                    <p class="text-xs font-bold text-slate-400">Total Fee</p>
+                    <p class="text-xl font-black text-brand-green" id="booking-fee">₹500</p>
+                </div>
+                <button onclick="confirmBooking()"
+                    class="bg-brand-blue text-white px-8 py-3 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                    Pay & Book
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-10 overflow-y-auto h-screen relative">
+
+        <!-- Top Bar -->
+        <header class="flex justify-between items-center mb-10">
+            <div>
+                <h1 class="text-3xl font-bold" id="page-title">Overview</h1>
+                <p class="text-slate-500 mt-1" id="page-subtitle">Welcome back, <span id="user-name">User</span>! 👋</p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div
+                    class="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full bg-brand-green animate-pulse"></span>
+                    <span class="text-sm font-bold text-slate-600">AI Engine Online</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dynamic Sections -->
+
+        <!-- 1. Overview Section -->
+        <section id="view-overview" class="section-view active">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Career Readiness</p>
+                    <div class="text-4xl font-black text-brand-blue" id="ov-readiness">0%</div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full mt-4">
+                        <div id="ov-readiness-bar"
+                            class="bg-brand-blue h-full rounded-full transition-all duration-1000" style="width: 0%">
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-6 rounded-3xl" data-tilt>
+                    <p class="text-slate-400 font-bold text-xs uppercase mb-2">Unemployment Risk</p>
+                    <div class="text-4xl font-black text-red-500" id="ov-risk">0%</div>
+                    <div class="w-full bg-slate-100 h-2 rounded-full mt-4">
+                        <div id="ov-risk-bar" class="bg-red-500 h-full rounded-full transition-all duration-1000"
+                            style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-brand-blue to-blue-700 p-6 rounded-3xl shadow-lg shadow-blue-100 text-white"
+                    data-tilt>
+                    <p class="text-blue-100 font-bold text-xs uppercase mb-2">Next Best Action</p>
+                    <div class="text-lg font-bold mb-4" id="ov-next-action">Complete your profile to get AI advice</div>
+                    <button onclick="showSection('profile')"
+                        class="bg-white text-brand-blue px-4 py-2 rounded-xl text-sm font-black">Go to Profile</button>
+                </div>
+            </div>
+
+            <!-- AI Interview Prompt Card -->
+            <div
+                class="glass-card p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row items-center justify-between border-2 border-brand-blue/5 relative overflow-hidden group">
+                <div
+                    class="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform">
+                </div>
+                <div class="flex items-center space-x-6 mb-6 md:mb-0 relative">
+                    <div
+                        class="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-blue text-2xl">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-black text-slate-900 mb-1">AI Mock Interview</h3>
+                        <p class="text-sm text-slate-500 font-medium">Practice with our Voice AI and get real-time
+                            technical feedback.</p>
+                    </div>
+                </div>
+                <a href="interview-simulator.html"
+                    class="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black shadow-xl shadow-slate-200 hover:bg-brand-blue transition-all relative">
+                    Start Interview <i class="fas fa-bolt ml-2 text-yellow-400"></i>
+                </a>
+            </div>
+            <!-- Additional overview items like Saved Careers -->
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6">Recently Recommended Careers</h2>
+                    <div id="ov-careers" class="space-y-4 text-slate-400 italic text-sm">Update your profile to see
+                        matches.</div>
+                </div>
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100">
+                    <h2 class="text-xl font-bold mb-6">Learning Hub Progress</h2>
+                    <div id="ov-learning" class="space-y-4 text-slate-400 italic text-sm">No courses started yet.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. My Profile Section -->
+        <section id="view-profile" class="section-view">
+            <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100">
+                <form id="fullProfileForm" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Full Name</label>
+                        <input type="text" id="prof-name"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Email (Read Only)</label>
+                        <input type="email" id="prof-email" disabled
+                            class="w-full p-4 bg-slate-100 border border-slate-200 rounded-2xl outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Education</label>
+                        <select id="prof-edu"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none">
+                            <option value="10th">10th Pass</option>
+                            <option value="12th">12th Pass</option>
+                            <option value="graduate">Graduate</option>
+                            <option value="dropout">Dropout</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Location</label>
+                        <input type="text" id="prof-loc" placeholder="e.g. Lucknow, UP"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Age</label>
+                        <input type="number" id="prof-age"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Gender</label>
+                        <select id="prof-gender"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Stream/Branch</label>
+                        <input type="text" id="prof-stream" placeholder="e.g. Computer Science"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Year of Passing</label>
+                        <input type="number" id="prof-year"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Career Goals (Comma separated)</label>
+                        <input type="text" id="prof-goals" placeholder="e.g. SDE, Data Scientist"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Work Experience</label>
+                        <textarea id="prof-exp" placeholder="Zero Resume Mode: Share anything you've worked on..."
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue"></textarea>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="font-bold text-slate-700">Budget for Learning (₹)</label>
+                        <input type="number" id="prof-budget" placeholder="0 for free courses"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                    </div>
+                    <div class="col-span-full space-y-2">
+                        <label class="font-bold text-slate-700">Skills (Comma separated)</label>
+                        <div id="skills-tags" class="flex flex-wrap gap-2 mb-2"></div>
+                        <input type="text" id="prof-skills" placeholder="e.g. Typing, MS Excel, Driving"
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none">
+                    </div>
+                    <div class="col-span-full space-y-2">
+                        <label class="font-bold text-slate-700">Resume URL (Portfolio/LinkedIn/Drive)</label>
+                        <input type="text" id="prof-resume" placeholder="https://..."
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue">
+                        <p class="text-[10px] text-slate-400 italic">Zero Resume Mode: Link your portfolio or a
+                            cloud-stored document for employer review.</p>
+                    </div>
+                    <div class="col-span-full">
+                        <button type="submit"
+                            class="w-full bg-brand-blue text-white font-black p-5 rounded-2xl shadow-xl shadow-blue-200 hover:scale-[1.01] transition-all">Update
+                            AI Intelligence Profile</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. Career Insights Section (Dynamic) -->
+        <section id="view-insights" class="section-view">
+            <div id="insights-container" class="grid md:grid-cols-2 gap-8">
+                <!-- AI Matches will be injected here -->
+                <div
+                    class="col-span-full bg-slate-100 p-12 rounded-[2.5rem] text-center border-2 border-dashed border-slate-200">
+                    <div class="text-4xl mb-4 text-slate-300"><i class="fas fa-robot"></i></div>
+                    <p class="text-slate-500 font-bold">Complete profile to generate AI Career Insights</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. Skills Roadmap -->
+        <section id="view-roadmap" class="section-view">
+            <div id="roadmap-container" class="space-y-8">
+                <!-- Roadmap items injected -->
+                <div class="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center">
+                    <h3 class="text-xl font-bold text-slate-400">Select a career to see your roadmap</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- 5. Learning Hub -->
+        <section id="view-learning" class="section-view">
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="learning-grid">
+                <!-- Courses injected -->
+            </div>
+        </section>
+
+        <!-- 6. My Applications -->
+        <section id="view-applications" class="section-view">
+            <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Job Title</th>
+                            <th class="p-6">Company</th>
+                            <th class="p-6">Match Score</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="applications-table">
+                        <!-- Applications injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 7. Job Portal -->
+        <section id="view-jobs" class="section-view">
+            <div class="mb-10 flex space-x-4">
+                <button onclick="loadJobs('')"
+                    class="px-6 py-2 bg-brand-dark text-white rounded-full text-sm font-bold">All Jobs</button>
+                <button onclick="loadJobs('Local')"
+                    class="px-6 py-2 bg-white border border-slate-200 rounded-full text-sm font-bold">Local</button>
+                <button onclick="loadJobs('Entry-level')"
+                    class="px-6 py-2 bg-white border border-slate-200 rounded-full text-sm font-bold">Entry-Level</button>
+            </div>
+            <div class="grid gap-6 px-1" id="jobs-list">
+                <!-- Jobs injected -->
+            </div>
+        </section>
+
+        <!-- 7. Govt Schemes -->
+        <section id="view-schemes" class="section-view">
+            <div class="grid md:grid-cols-2 gap-8" id="schemes-list">
+                <!-- Schemes injected -->
+            </div>
+        </section>
+
+        <!-- 8. Career Simulation -->
+        <section id="view-simulation" class="section-view">
+            <div class="bg-brand-dark text-white p-10 rounded-[2.5rem] mb-10 overflow-hidden relative">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-brand-blue/20 rounded-full blur-3xl text-xs"></div>
+                <h2 class="text-2xl font-bold mb-4 italic">The "What If" Engine</h2>
+                <p class="text-slate-400 mb-8 max-w-lg">Select a career and simulate your growth over the next 5 years
+                    based on industry AI projections.</p>
+                <div class="flex space-x-4">
+                    <select id="sim-career-select"
+                        class="bg-slate-800 border-none p-4 rounded-2xl outline-none text-brand-green font-bold">
+                        <option value="">Choose a Career</option>
+                    </select>
+                    <button onclick="runSimulation()"
+                        class="bg-brand-green text-brand-dark font-black px-8 py-4 rounded-2xl hover:scale-105 transition-all">Simulate
+                        Future</button>
+                </div>
+            </div>
+            <div id="sim-results" class="hidden grid md:grid-cols-3 gap-6">
+                <!-- Simulation Results injected -->
+            </div>
+        </section>
+
+        
+        <!-- ==================== RISK ANALYSIS SECTION ==================== -->
+<section id="view-risk" class="section-view">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">Unemployment Risk Analysis</h1>
+        <p class="text-slate-500">AI-powered analysis of your unemployment risk factors</p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="risk-loading" class="flex items-center justify-center py-20">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-slate-600 font-medium">Analyzing your profile...</p>
+        </div>
+    </div>
+
+    <!-- Risk Analysis Content -->
+    <div id="risk-content" class="hidden space-y-6">
+        
+        <!-- Risk Score Card -->
+        <div class="glass-card rounded-3xl p-8" data-tilt>
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                
+                <!-- Gauge Chart -->
+                <div class="flex flex-col items-center">
+                    <div class="relative w-64 h-64">
+                        <canvas id="riskGaugeChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <div class="text-5xl font-bold" id="risk-score-display">--</div>
+                        <div class="text-sm text-slate-500 mt-1">Risk Score (0-100)</div>
+                    </div>
+                </div>
+
+                <!-- Risk Level Info -->
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div id="risk-level-badge" class="px-4 py-2 rounded-full text-sm font-bold">
+                            <!-- Dynamic badge -->
+                        </div>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800" id="risk-level-text">Analyzing...</h3>
+                    <p class="text-slate-600" id="risk-description">
+                        Please wait while we analyze your unemployment risk based on your profile.
+                    </p>
+                    <button onclick="refreshRiskAnalysis()" 
+                        class="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all">
+                        <i class="fas fa-refresh mr-2"></i>Refresh Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Factors -->
+        <div class="glass-card rounded-3xl p-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-6">
+                <i class="fas fa-exclamation-triangle text-orange-500 mr-2"></i>
+                Risk Factors Identified
+            </h3>
+            <div id="risk-factors-list" class="space-y-3">
+                <!-- Dynamic factors will be inserted here -->
+            </div>
+        </div>
+
+        <!-- AI Recommendations -->
+        <div class="glass-card rounded-3xl p-8">
+            <h3 class="text-xl font-bold text-slate-800 mb-6">
+                <i class="fas fa-robot text-blue-600 mr-2"></i>
+                AI-Powered Recommendations
+            </h3>
+
+            <!-- Immediate Actions -->
+            <div class="mb-6">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                    Immediate Actions
+                </h4>
+                <div id="immediate-actions-list" class="space-y-2">
+                    <!-- Dynamic actions -->
+                </div>
+            </div>
+
+            <!-- Skill Recommendations -->
+            <div class="mb-6">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                    Skills to Learn
+                </h4>
+                <div id="skill-recommendations-list" class="flex flex-wrap gap-2">
+                    <!-- Dynamic skills -->
+                </div>
+            </div>
+
+            <!-- Career Path -->
+            <div class="mb-6">
+                <h4 class="text-sm font-bold text-slate-700 uppercase tracking-wide mb-3">
+                    Recommended Career Path
+                </h4>
+                <div id="career-path-text" class="p-4 bg-blue-50 rounded-xl text-slate-700">
+                    <!-- Dynamic career path -->
+                </div>
+            </div>
+
+            <!-- Motivation -->
+            <div class="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-xl border-l-4 border-green-500">
+                <p class="text-slate-700 italic" id="motivation-text">
+                    <!-- Dynamic motivation -->
+                </p>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<section id="view-employability" class="section-view">
+    <div class="max-w-2xl mx-auto">
+        <h2 class="text-3xl font-bold mb-1">AI Employability Score</h2>
+        <p class="text-slate-400 mb-8 text-sm">AI-calculated job-readiness score based on your profile</p>
+        <div class="bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 text-center mb-6">
+            <div id="emp-score-number" class="text-8xl font-black mb-1 transition-all duration-1000" style="color:#ef4444">0</div>
+            <div id="emp-score-label" class="text-xl font-bold mb-6" style="color:#ef4444">Calculating...</div>
+            <div class="w-full bg-slate-100 rounded-full h-5 mb-8 overflow-hidden">
+                <div id="emp-score-bar" class="h-5 rounded-full transition-all duration-1000" style="width:0%;background:#ef4444"></div>
+            </div>
+            <div class="grid grid-cols-5 gap-3 text-center" id="emp-breakdown">
+                <div class="bg-slate-50 rounded-2xl p-3 border"><div class="text-2xl font-black text-slate-700" id="eb-skills">0</div><div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Skills</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 border"><div class="text-2xl font-black text-slate-700" id="eb-edu">0</div><div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Education</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 border"><div class="text-2xl font-black text-slate-700" id="eb-exp">0</div><div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Experience</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 border"><div class="text-2xl font-black text-slate-700" id="eb-loc">0</div><div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Location</div></div>
+                <div class="bg-slate-50 rounded-2xl p-3 border"><div class="text-2xl font-black text-slate-700" id="eb-cert">0</div><div class="text-[10px] text-slate-400 uppercase font-bold mt-1">Readiness</div></div>
+            </div>
+        </div>
+        <div class="bg-purple-50 rounded-[2rem] p-8 border border-purple-100">
+            <h3 class="font-bold text-lg mb-4 text-purple-800"><i class="fas fa-arrow-trend-up mr-2"></i>How to Improve Your Score</h3>
+            <div id="emp-improvements" class="space-y-3"></div>
+        </div>
+    </div>
+</section>
+
+        <!-- 10. Career Consultants List -->
+        <section id="view-consultants" class="section-view">
+            <div class="mb-10 flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex space-x-4">
+                    <select id="filter-expertise" onchange="loadConsultants()"
+                        class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold">
+                        <option value="">Expertise: All</option>
+                        <option value="IT & Software">IT & Software</option>
+                        <option value="Govt Jobs">Govt Jobs</option>
+                        <option value="MBA">MBA</option>
+                        <option value="Skill-based jobs">Skill-based jobs</option>
+                    </select>
+                    <select id="filter-fee" onchange="loadConsultants()"
+                        class="px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold">
+                        <option value="">Fee: Any</option>
+                        <option value="500">Under ₹500</option>
+                        <option value="1000">Under ₹1000</option>
+                    </select>
+                </div>
+                <div id="ai-rec-alert"
+                    class="hidden bg-brand-blue/10 text-brand-blue px-6 py-3 rounded-2xl border border-brand-blue/20 flex items-center space-x-3 animate-pulse">
+                    <i class="fas fa-robot"></i>
+                    <span class="text-xs font-bold" id="ai-rec-text">AI Recommendation active!</span>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" id="consultants-list">
+                <!-- Consultants injected -->
+            </div>
+        </section>
+
+        <!-- 11. My Sessions -->
+        <section id="view-my-sessions" class="section-view">
+            <div class="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-sm">
+                <table class="w-full text-left">
+                    <thead class="bg-slate-50">
+                        <tr class="text-slate-400 text-[10px] uppercase font-bold">
+                            <th class="p-6">Consultant</th>
+                            <th class="p-6">Expertise</th>
+                            <th class="p-6">Scheduled Date</th>
+                            <th class="p-6">Status</th>
+                            <th class="p-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sessions-table">
+                        <!-- Sessions injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- 12. AI Assistant Chat -->
+        <section id="view-chat" class="section-view">
+            <div class="bg-white rounded-[2.5rem] border border-slate-100 h-[600px] flex flex-col">
+                <div class="flex-1 p-8 overflow-y-auto space-y-6" id="chat-messages">
+                    <div class="flex items-start space-x-4">
+                        <div
+                            class="w-10 h-10 bg-blue-100 text-brand-blue rounded-xl flex items-center justify-center shadow-sm">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-2xl rounded-tl-none text-slate-700 max-w-[80%] font-medium">
+                            Hello! I am your CareerBridge AI mentor. Ask me anything about careers, skills, or
+                            government schemes.</div>
+                    </div>
+                </div>
+                <div class="p-6 border-t border-slate-100 flex space-x-4">
+                    <input type="text" id="chat-input" placeholder="Type your doubt here..."
+                        class="flex-1 p-4 bg-slate-50 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue border border-slate-100">
+                    <button onclick="sendMessage()"
+                        class="bg-brand-blue text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg"><i
+                            class="fas fa-paper-plane"></i></button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 11. Settings -->
+        <section id="view-settings" class="section-view">
+            <div class="bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-100 max-w-2xl">
+                <h3 class="text-xl font-bold mb-8">Account Settings</h3>
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+                        <div>
+                            <p class="font-bold">Privacy Controls</p>
+                            <p class="text-sm text-slate-500">Hide profile from local employers</p>
+                        </div>
+                        <div class="w-12 h-6 bg-slate-300 rounded-full flex items-center p-1 cursor-pointer">
+                            <div class="w-4 h-4 bg-white rounded-full"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+                        <div>
+                            <p class="font-bold">AI Intensity</p>
+                            <p class="text-sm text-slate-500">How aggressive AI suggestions should be</p>
+                        </div>
+                        <select class="p-2 rounded-lg bg-white border border-slate-200">
+                            <option>Moderate</option>
+                            <option>High</option>
+                        </select>
+                    </div>
+                    <button
+                        class="w-full text-red-500 font-bold p-4 hover:bg-red-50 rounded-2xl transition-all">Deactivate
+                        AI Career Sync</button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const userRole = localStorage.getItem('userRole');
+        if (!token) window.location.href = 'login.html';
+        if (userRole === 'admin') window.location.href = 'admin.html';
+
+        let currentUser = null;
+
+        // ── Toast Notification Helper ─────────────────────────────────────────
+        function showToast(message, type = 'success') {
+            const existing = document.getElementById('toast-notif');
+            if (existing) existing.remove();
+
+            const colors = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                info: 'bg-brand-blue'
+            };
+            const toast = document.createElement('div');
+            toast.id = 'toast-notif';
+            toast.className = `fixed bottom-6 right-6 z-[9999] ${colors[type] || colors.success} text-white px-6 py-4 rounded-2xl shadow-2xl font-bold text-sm max-w-xs`;
+            toast.style.cssText = 'animation: slideUp 0.3s ease; transform: translateY(0);';
+            toast.innerHTML = message;
+            document.body.appendChild(toast);
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3500);
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        async function fetchUser() {
+            try {
+                const res = await fetch('http://localhost:5000/api/users/me', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                currentUser = await res.json();
+                renderUserInfo();
+
+                // Entrance Animations
+                gsap.from("aside", { x: -50, opacity: 0, duration: 1, ease: "power4.out" });
+                gsap.from("header", { y: -30, opacity: 0, duration: 0.8, delay: 0.2, ease: "power3.out" });
+                gsap.from(".section-view.active > *", { y: 20, opacity: 0, duration: 0.8, delay: 0.4, stagger: 0.05, ease: "power2.out" });
+
+                // Initialize Tilt
+                if (typeof VanillaTilt !== 'undefined') {
+                    VanillaTilt.init(document.querySelectorAll("[data-tilt]"), {
+                        max: 5,
+                        speed: 400,
+                        glare: true,
+                        "max-glare": 0.1,
+                    });
+                }
+
+                // Deep Link Logic
+                if (localStorage.getItem('autoStartResume') === 'true') {
+                    localStorage.removeItem('autoStartResume');
+                    showSection('chat');
+                    setTimeout(() => {
+                        resumeFlowActive = true;
+                        resumeStep = 0;
+                        resumeData = {};
+                        sendBotMessage("Welcome! As you selected Zero-Resume Mode on the home page, let's start building your resume. " + resumeQuestions[0]);
+                    }, 1000);
+                } else if (localStorage.getItem('autoShowInsights') === 'true') {
+                    localStorage.removeItem('autoShowInsights');
+                    showSection('insights');
+                }
+
+            } catch (err) { logout(); }
+        }
+
+        function renderUserInfo() {
+            document.getElementById('user-name').innerText = currentUser.name;
+            document.getElementById('prof-name').value = currentUser.name;
+            document.getElementById('prof-email').value = currentUser.email;
+            document.getElementById('prof-loc').value = currentUser.location || '';
+            document.getElementById('prof-age').value = currentUser.age || '';
+            document.getElementById('prof-gender').value = currentUser.gender || 'Male';
+            document.getElementById('prof-edu').value = currentUser.education?.qualification || '12th';
+            document.getElementById('prof-stream').value = currentUser.education?.stream || '';
+            document.getElementById('prof-year').value = currentUser.education?.year || '';
+            document.getElementById('prof-goals').value = currentUser.careerGoals?.join(', ') || '';
+            document.getElementById('prof-exp').value = currentUser.experience || '';
+            document.getElementById('prof-budget').value = currentUser.financialConstraints?.budget || 0;
+            document.getElementById('prof-skills').value = currentUser.skills?.join(', ') || '';
+            document.getElementById('prof-resume').value = currentUser.resume?.url || '';
+
+            // Stats
+            document.getElementById('ov-readiness').innerText = (currentUser.careerReadiness || 0) + '%';
+            document.getElementById('ov-readiness-bar').style.width = (currentUser.careerReadiness || 0) + '%';
+            document.getElementById('ov-risk').innerText = (currentUser.unemploymentRisk || 0) + '%';
+            document.getElementById('ov-risk-bar').style.width = (currentUser.unemploymentRisk || 0) + '%';
+
+            // ── Dynamic Next Best Action ──────────────────────────────────────
+            const nextActionEl = document.getElementById('ov-next-action');
+            const nextBtnEl = document.querySelector('#view-overview .bg-gradient-to-br button');
+            const u = currentUser;
+
+            if (!u.skills || u.skills.length === 0) {
+                nextActionEl.innerText = '📝 Apne skills profile me add karo — AI match improve hoga';
+                if (nextBtnEl) { nextBtnEl.innerText = 'Profile Update Karo'; nextBtnEl.onclick = () => showSection('profile'); }
+            } else if (!u.selectedCareer || !u.selectedCareer.title) {
+                nextActionEl.innerText = '🎯 Career Insights me jao aur ek career select karo';
+                if (nextBtnEl) { nextBtnEl.innerText = 'Career Explore Karo'; nextBtnEl.onclick = () => showSection('insights'); }
+            } else if (u.unemploymentRisk > 60) {
+                nextActionEl.innerText = `⚠️ Risk high hai! Ek consultant se career guidance lo`;
+                if (nextBtnEl) { nextBtnEl.innerText = 'Consultant Dhundho'; nextBtnEl.onclick = () => showSection('consultants'); }
+            } else if (!u.interviewHistory || u.interviewHistory.length === 0) {
+                nextActionEl.innerText = `🎤 ${u.selectedCareer.title || 'Apne career'} ke liye pehla AI Mock Interview do`;
+                if (nextBtnEl) { nextBtnEl.innerText = 'Interview Start Karo'; nextBtnEl.onclick = () => window.location.href = 'interview-simulator.html'; }
+            } else if (u.careerReadiness < 50) {
+                nextActionEl.innerText = `📚 ${u.selectedCareer.title} roadmap ka next phase complete karo`;
+                if (nextBtnEl) { nextBtnEl.innerText = 'Roadmap Dekho'; nextBtnEl.onclick = () => showSection('roadmap'); }
+            } else {
+                nextActionEl.innerText = `✅ Career Readiness ${u.careerReadiness}% — Jobs apply karna shuru karo!`;
+                if (nextBtnEl) { nextBtnEl.innerText = 'Jobs Dekho'; nextBtnEl.onclick = () => showSection('jobs'); }
+            }
+            // ─────────────────────────────────────────────────────────────────
+        }
+
+
+        function showSection(name) {
+            const current = document.querySelector('.section-view.active');
+            const target = document.getElementById('view-' + name);
+            const nav = document.getElementById('nav-' + name);
+
+            if (current && current !== target) {
+                gsap.to(current, {
+                    opacity: 0, y: 10, duration: 0.2, onComplete: () => {
+                        current.classList.remove('active');
+                        if (target) {
+                            target.classList.add('active');
+                            gsap.fromTo(target, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.3, ease: "power2.out" });
+                        }
+                    }
+                });
+            } else if (target) {
+                target.classList.add('active');
+                gsap.to(target, { opacity: 1, y: 0, duration: 0.3 });
+            }
+
+            document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
+            if (nav) nav.classList.add('active');
+
+            document.getElementById('page-title').innerText = name.charAt(0).toUpperCase() + name.slice(1);
+            if (name === 'insights') loadInsights();
+            if (name === 'jobs') loadJobs();
+            if (name === 'schemes') loadSchemes();
+            if (name === 'roadmap') showRoadmap();
+            if (name === 'risk') loadRiskAnalysis();
+            if (name === 'applications') loadApplications();
+            if (name === 'employability') loadEmployabilityScore();
+            if (name === 'learning') {
+                const careerId = localStorage.getItem('selectedCareerId');
+                if(careerId) loadLearningCourses(careerId, 0);
+                else document.getElementById('learning-grid').innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 italic font-bold">Please select a career path in Insights first.</div>';
+            }
+        }
+
+        async function loadEmployabilityScore() {
+            try {
+                document.getElementById('emp-score-number').textContent = '...';
+                const res = await fetch('http://localhost:5000/api/employability/score', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                if (!res.ok) throw new Error('Failed to calculate score');
+                const d = await res.json();
+                document.getElementById('emp-score-number').textContent = d.score;
+                document.getElementById('emp-score-number').style.color = d.levelColor;
+                document.getElementById('emp-score-label').textContent = d.level + ' Employability';
+                document.getElementById('emp-score-label').style.color = d.levelColor;
+                document.getElementById('emp-score-bar').style.width = d.score + '%';
+                document.getElementById('emp-score-bar').style.background = d.levelColor;
+                document.getElementById('eb-skills').textContent = d.breakdown.skillScore;
+                document.getElementById('eb-edu').textContent = d.breakdown.eduScore;
+                document.getElementById('eb-exp').textContent = d.breakdown.expScore;
+                document.getElementById('eb-loc').textContent = d.breakdown.locScore;
+                document.getElementById('eb-cert').textContent = d.breakdown.certScore;
+                document.getElementById('emp-improvements').innerHTML = d.improvements.map(imp =>
+                    `<div class="flex items-start space-x-3 bg-white rounded-2xl p-4 border border-purple-100">
+                        <i class="fas fa-arrow-up text-purple-500 mt-0.5"></i>
+                        <span class="text-sm font-medium text-slate-700">${imp}</span>
+                    </div>`
+                ).join('');
+            } catch(err) {
+                document.getElementById('emp-score-number').textContent = 'Error';
+                console.error('Employability score error:', err);
+            }
+        }
+
+        async function loadInsights() {
+            const container = document.getElementById('insights-container');
+            container.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 font-bold italic">AI is calculating your best career matches...</div>';
+            try {
+                const res = await fetch('http://localhost:5000/api/users/recommendations', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const careers = await res.json();
+                container.innerHTML = '';
+
+                const simSelect = document.getElementById('sim-career-select');
+                simSelect.innerHTML = '<option value="">Choose a Career</option>';
+
+                careers.forEach(c => {
+                    simSelect.innerHTML += `<option value="${c._id}">${c.title}</option>`;
+                    container.innerHTML += `
+                        <div class="bg-white p-8 rounded-[2rem] border-2 border-brand-blue/10 shadow-sm relative overflow-hidden group hover:border-brand-blue transition-all">
+                            <div class="absolute top-0 right-0 p-3 bg-brand-blue text-white text-[10px] font-black uppercase rounded-bl-2xl">${c.matchScore}% AI Match</div>
+                            <div class="w-16 h-16 bg-blue-50 text-brand-blue rounded-2xl flex items-center justify-center text-2xl mb-6 shadow-sm"><i class="fas fa-chart-line"></i></div>
+                            <h3 class="text-2xl font-bold mb-2">${c.title}</h3>
+                            <p class="text-slate-500 mb-6 font-medium text-sm italic line-clamp-2">${c.description}</p>
+                            <div class="flex space-x-4 mb-6">
+                                <div class="flex-1 p-3 bg-slate-50 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">Avg Salary</p><p class="font-black text-slate-700">${c.salaryRange.entry}</p></div>
+                                <div class="flex-1 p-3 bg-slate-50 rounded-xl"><p class="text-[10px] font-bold text-slate-400 uppercase">Demand</p><p class="font-black text-brand-green">High</p></div>
+                            </div>
+                            <button onclick="selectPath('${c._id}', '${c.title}')" class="w-full bg-brand-dark text-white font-bold p-4 rounded-2xl hover:bg-slate-800 transition-all flex items-center justify-center space-x-2">
+                                <span>Select Path</span>
+                                <i class="fas fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            } catch (error) { container.innerHTML = 'Error loading recommendations.'; }
+        }
+
+        async function selectPath(careerId, title) {
+            // Save career selection to localStorage
+            localStorage.setItem('selectedCareerId', careerId);
+            localStorage.setItem('selectedCareerTitle', title);
+            localStorage.setItem('selectedCareer', title); // interview-simulator bhi yahi read karta hai
+
+            // Silent backend save (try karo, fail hua toh bhi chalega)
+            try {
+                await fetch('http://localhost:5000/api/users/select-path', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ careerId, title })
+                });
+            } catch (err) { console.log('Path save skipped:', err.message); }
+
+            // Toast show karo — alert() ki jagah
+            showToast(`✅ ${title} select hua! Roadmap generate ho raha hai...`);
+            showSection('roadmap');
+        }
+
+        async function showRoadmap() {
+            const careerId = localStorage.getItem('selectedCareerId');
+            const title = localStorage.getItem('selectedCareerTitle');
+            const container = document.getElementById('roadmap-container');
+
+            if (!careerId && !title) {
+                container.innerHTML = `<div class="bg-white p-12 rounded-[2.5rem] border border-slate-100 text-center">
+                    <i class="fas fa-map-signs text-5xl text-slate-200 mb-4 block"></i>
+                    <h3 class="text-xl font-bold text-slate-400 mb-4">Pehle koi career select karo</h3>
+                    <button onclick="showSection('insights')"
+                        class="bg-brand-blue text-white px-6 py-3 rounded-2xl font-bold hover:bg-blue-700 transition">
+                        Career Explore Karo
+                    </button>
+                </div>`;
+                return;
+            }
+
+            // Loading state
+            container.innerHTML = `<div class="flex items-center gap-4 p-6 bg-blue-50 rounded-3xl mb-6">
+                <i class="fas fa-cog fa-spin text-brand-blue text-2xl"></i>
+                <div>
+                    <p class="font-black text-brand-blue">${title} ka AI Roadmap ban raha hai...</p>
+                    <p class="text-blue-400 text-sm">NPTEL, Kaggle, freeCodeCamp se best resources dhoondh rahe hain</p>
+                </div>
+            </div>`;
+
+            try {
+                // Gemini se dynamic roadmap generate karo
+                const res = await fetch('http://localhost:5000/api/users/roadmap/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ career: title })
+                });
+                const data = await res.json();
+                renderRoadmap(data.roadmap, title, careerId);
+            } catch (err) {
+                // Fallback: purana DB roadmap try karo
+                try {
+                    const res2 = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                    const roadmap = await res2.json();
+                    renderRoadmap(roadmap, title, careerId);
+                } catch (err2) {
+                    container.innerHTML = '<p class="text-red-400 p-6">Roadmap load nahi hua. Server check karo.</p>';
+                }
+            }
+        }
+
+        function renderRoadmap(roadmap, title, careerId) {
+            const container = document.getElementById('roadmap-container');
+
+            // Header with Interview button
+            container.innerHTML = `
+                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-10">
+                    <h2 class="text-2xl font-black text-slate-900">
+                        🗺️ Sequential Roadmap: <span class="text-brand-blue">${title}</span>
+                    </h2>
+                    <button onclick="goToInterview('${title}')"
+                        class="flex items-center gap-2 bg-brand-blue text-white px-5 py-3 rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+                        <i class="fas fa-microphone"></i> Practice Interview
+                    </button>
+                </div>`;
+
+            roadmap.forEach((step, index) => {
+                const skills = (step.skills || []).map(s =>
+                    `<span class="text-[10px] font-bold bg-blue-50 text-brand-blue px-2 py-1 rounded-md uppercase tracking-wider">${s}</span>`
+                ).join('');
+
+                const resources = (step.resources || []).map(r => `
+                    <a href="${r.link}" target="_blank"
+                        class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-blue-50 border border-transparent hover:border-brand-blue/20 transition-all group">
+                        <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow-sm text-lg flex-shrink-0">
+                            ${r.isFree ? '🆓' : '💰'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-sm text-slate-800 truncate">${r.title}</p>
+                            <p class="text-xs text-slate-400">${r.platform || 'Online'}</p>
+                        </div>
+                        <i class="fas fa-external-link-alt text-slate-300 group-hover:text-brand-blue text-xs flex-shrink-0"></i>
+                    </a>`
+                ).join('');
+
+                const milestone = step.milestone ? `<p class="text-slate-500 text-sm mb-4 italic">"${step.milestone}"</p>` : '';
+
+                container.innerHTML += `
+                    <div class="flex items-start space-x-6 relative pb-10">
+                        ${index !== roadmap.length - 1 ? '<div class="absolute left-5 top-10 w-0.5 h-full bg-slate-200"></div>' : ''}
+                        <div class="w-10 h-10 rounded-full border-4 border-white shadow-md bg-brand-blue text-white flex items-center justify-center font-bold z-10 shrink-0">${index + 1}</div>
+                        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex-1 hover:border-brand-blue/30 transition-all">
+                            <div class="flex justify-between items-start mb-3">
+                                <h4 class="text-lg font-bold">${step.phase}</h4>
+                                <span class="text-xs font-bold bg-slate-50 text-slate-500 px-3 py-1 rounded-full flex-shrink-0 ml-2">${step.duration}</span>
+                            </div>
+                            ${milestone}
+                            <div class="flex flex-wrap gap-2 mb-4">${skills}</div>
+                            <div class="space-y-2">${resources}</div>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function goToInterview(career) {
+            localStorage.setItem('selectedCareer', career);
+            window.location.href = 'interview-simulator.html';
+        }
+
+        async function loadLearningCourses(careerId, stepIndex) {
+            showSection('learning');
+            const grid = document.getElementById('learning-grid');
+            grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 italic">Syncing resources and analyzing ROI...</div>';
+
+            try {
+                const res = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                const roadmap = await res.json();
+                const step = roadmap[stepIndex];
+
+                // Calculate ROI for these resources
+                const roiDataMap = {};
+                for (let r of step.resources) {
+                    try {
+                        const roiRes = await fetch('http://localhost:8000/course-roi', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                course_cost: r.isFree ? 0 : 5000, 
+                                course_duration_months: 3, 
+                                current_salary: 300000, 
+                                target_salary_bump: 20
+                            })
+                        });
+                        if (roiRes.ok) roiDataMap[r.title] = await roiRes.json();
+                    } catch(e) {}
+                }
+
+                grid.innerHTML = '';
+                step.resources.forEach(r => {
+                    const roi = roiDataMap[r.title];
+                    const roiHtml = roi ? `
+                        <div class="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between text-xs font-bold text-slate-500">
+                            <div><i class="fas fa-chart-line text-brand-green mr-1"></i> <span class="text-brand-green">${roi.roi_percentage == 999 ? 'Infinite' : roi.roi_percentage + '%'} ROI</span></div>
+                            <div><i class="fas fa-clock text-orange-400 mr-1"></i> ${roi.time_to_job_months} mo Time-to-Job</div>
+                        </div>
+                    ` : '';
+
+                    grid.innerHTML += `
+                        <div class="bg-white p-6 rounded-[2rem] border border-slate-100 relative group overflow-hidden flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="w-12 h-12 bg-blue-50 text-brand-blue rounded-xl flex items-center justify-center text-xl shadow-sm"><i class="fas fa-video"></i></div>
+                                <span class="text-[10px] font-bold ${r.isFree ? 'bg-brand-green/10 text-brand-green' : 'bg-red-50 text-red-500'} px-2 py-1 rounded-full uppercase">${r.isFree ? 'Free' : 'Premium'}</span>
+                            </div>
+                            <h4 class="font-bold text-lg mb-2">${r.title}</h4>
+                            <p class="text-slate-400 text-xs mb-6 font-medium italic flex-grow">Part of ${step.phase}</p>
+                            <a href="${r.link}" target="_blank" class="w-full bg-slate-900 text-white font-bold p-3 rounded-xl block text-center hover:bg-black transition-all text-sm mt-auto">Start Learning</a>
+                            ${roiHtml}
+                        </div>
+                    `;
+                });
+            } catch (err) { grid.innerHTML = 'Error loading resources.'; }
+        }
+
+        let userApplications = [];
+
+        async function loadApplications() {
+            const tbody = document.getElementById('applications-table');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">Syncing your applications...</td></tr>';
+            try {
+                const res = await fetch('http://localhost:5000/api/users/my-applications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                userApplications = await res.json();
+                tbody.innerHTML = '';
+
+                if (userApplications.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">No applications found. AI recommends applying to matched jobs.</td></tr>';
+                    return;
+                }
+
+                userApplications.forEach(app => {
+                    const job = app.jobId || { title: 'Unknown', company: 'N/A', location: 'N/A' };
+                    const statusClass = app.status === 'Hired' ? 'bg-green-100 text-green-700' : (app.status === 'Applied' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700');
+
+                    // Match Score Prediction
+                    let prediction = "Low Fit";
+                    let predClass = "text-red-500";
+                    if (app.matchScore > 80) { prediction = "Excellent Match"; predClass = "text-brand-green"; }
+                    else if (app.matchScore > 60) { prediction = "Good Fit"; predClass = "text-brand-blue"; }
+                    else if (app.matchScore > 40) { prediction = "Moderate Fit"; predClass = "text-orange-500"; }
+
+                    tbody.innerHTML += `
+                        <tr class="border-t border-slate-50 hover:bg-slate-50 transition-all">
+                            <td class="p-6 font-bold">${job.title}</td>
+                            <td class="p-6 text-slate-500">${typeof job.company === 'object' ? job.company.name : job.company}</td>
+                            <td class="p-6">
+                                <div class="flex flex-col">
+                                    <span class="font-black text-brand-blue">${app.matchScore}%</span>
+                                    <span class="text-[10px] font-bold ${predClass}">${prediction}</span>
+                                </div>
+                            </td>
+                            <td class="p-6"><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}">${app.status === 'Applied' ? 'Pending' : app.status}</span></td>
+                            <td class="p-6 text-slate-400 text-sm">${new Date(app.appliedAt).toLocaleDateString()}</td>
+                        </tr>
+                    `;
+                });
+            } catch (err) { tbody.innerHTML = 'Error loading applications.'; }
+        }
+
+
+        async function applyToJob(jobId, btn) {
+            btn.innerText = 'Applying...';
+            btn.disabled = true;
+            try {
+                const res = await fetch(`http://localhost:5000/api/users/apply/${jobId}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    btn.innerText = 'Pending';
+                    btn.classList.remove('bg-brand-dark');
+                    btn.classList.add('bg-orange-400');
+                    alert('Job application submitted!');
+                } else {
+                    alert(data.message);
+                    btn.innerText = 'AI Apply';
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                alert('Failed to apply. Check connection.');
+                btn.innerText = 'AI Apply';
+                btn.disabled = false;
+            }
+        }
+
+        async function loadSchemes() {
+            const list = document.getElementById('schemes-list');
+            list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 italic font-bold">AI is identifying relevant government support...</div>';
+            try {
+                const res = await fetch('http://localhost:5000/api/schemes', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const schemes = await res.json();
+                list.innerHTML = '';
+
+                if (schemes.length === 0) {
+                    list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 italic">No government schemes matched currently.</div>';
+                    return;
+                }
+
+                schemes.forEach(s => {
+                    const finalLink = s.applyLink || s.link || '#';
+                    list.innerHTML += `
+                        <div onclick="window.open('${finalLink}', '_blank')" class="bg-white p-8 rounded-3xl border border-slate-100 relative group overflow-hidden hover:border-brand-green/30 hover:shadow-xl hover:shadow-brand-green/5 transition-all cursor-pointer">
+                             <div class="absolute -right-8 -top-8 w-24 h-24 bg-brand-green/5 rounded-full rotate-45 group-hover:scale-110 transition-all"></div>
+                            <span class="text-[10px] font-bold bg-green-50 text-brand-green px-3 py-1 rounded-full uppercase mb-4 inline-block tracking-tighter">${s.category || 'General'}</span>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-brand-green transition-all">${s.title}</h3>
+                            <p class="text-slate-500 text-sm mb-6 font-medium italic line-clamp-3">${s.benefits || s.description || 'View details on portal'}</p>
+                            <div class="text-brand-green font-black text-[11px] uppercase tracking-wider flex items-center group">
+                                Apply via Portal 
+                                <i class="fas fa-external-link-alt ml-2 group-hover:translate-x-1 transition-all"></i>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) { list.innerHTML = '<div class="col-span-full text-center text-red-400 font-bold">Error loading schemes.</div>'; }
+        }
+
+        async function loadRiskAnalysis() {
+            try {
+                const res = await fetch('http://localhost:5000/api/users/risk-analysis', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                document.getElementById('risk-analysis-score').innerText = data.score + '%';
+                document.getElementById('risk-level').innerText = data.level;
+                document.getElementById('risk-level').className = data.level === 'High' ? 'text-red-500' : data.level === 'Moderate' ? 'text-orange-500' : 'text-green-500';
+
+                const factorsList = document.getElementById('risk-factors');
+                factorsList.innerHTML = data.factors.map(f => `<li>${f}</li>`).join('');
+
+                const mitigationList = document.getElementById('risk-mitigation');
+                mitigationList.innerHTML = data.mitigation.map(m => `<li>${m}</li>`).join('');
+
+                const scoreCircle = document.getElementById('risk-analysis-score').parentElement;
+                scoreCircle.className = `inline-block p-10 ${data.level === 'High' ? 'bg-red-50' : data.level === 'Moderate' ? 'bg-orange-50' : 'bg-green-50'} rounded-full mb-8`;
+            } catch (err) { console.error('Error loading risk data'); }
+        }
+
+        async function runSimulation() {
+            const careerId = document.getElementById('sim-career-select').value;
+            if (!careerId) return alert('Select a career first');
+
+            const results = document.getElementById('sim-results');
+            results.classList.remove('hidden');
+            results.innerHTML = 'Simulating...';
+
+            const outcomes = [1, 3, 5];
+            results.innerHTML = '';
+            for (let yr of outcomes) {
+                const res = await fetch('http://localhost:5000/api/users/simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ careerId, year: yr })
+                });
+                const data = await res.json();
+                results.innerHTML += `
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <p class="text-slate-400 font-bold text-xs uppercase mb-2">Year ${yr} Estimate</p>
+                        <div class="text-2xl font-black text-slate-700">${data.projectedSalary}</div>
+                        <p class="text-sm ${yr > 3 ? 'text-brand-blue' : 'text-brand-green'} mt-1">${data.marketStability} Stability</p>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('fullProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('prof-name').value,
+                location: document.getElementById('prof-loc').value,
+                age: document.getElementById('prof-age').value,
+                gender: document.getElementById('prof-gender').value,
+                education: {
+                    qualification: document.getElementById('prof-edu').value,
+                    stream: document.getElementById('prof-stream').value,
+                    year: document.getElementById('prof-year').value
+                },
+                careerGoals: document.getElementById('prof-goals').value.split(',').map(s => s.trim()).filter(s => s !== ""),
+                experience: document.getElementById('prof-exp').value,
+                financialConstraints: {
+                    budget: document.getElementById('prof-budget').value
+                },
+                skills: document.getElementById('prof-skills').value.split(',').map(s => s.trim()).filter(s => s !== ""),
+                resume: { url: document.getElementById('prof-resume').value }
+            };
+
+            const res = await fetch('http://localhost:5000/api/users/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            const user = await res.json();
+            currentUser = user;
+            renderUserInfo();
+            alert('AI Profile Updated! Insights refreshed.');
+            showSection('overview');
+        });
+
+
+        function getStatusClass(s) {
+            if (s === 'Applied') return 'bg-slate-100 text-slate-400';
+            if (s === 'Shortlisted') return 'bg-blue-100 text-brand-blue';
+            if (s === 'Hired') return 'bg-green-100 text-brand-green';
+            return 'bg-red-100 text-brand-red';
+        }
+
+        let resumeFlowActive = false;
+        let resumeStep = 0;
+        let resumeData = {};
+        const resumeQuestions = [
+            "Great! Let's build your professional resume. First, what is your current or highest educational qualification and the institution name?",
+            "What are your core technical or soft skills? (e.g., Python, Typing, Customer Service)",
+            "Any past work experience, internships, or volunteer work? (Mention role and company)",
+            "What is your key career objective or what kind of role are you looking for?",
+            "Mention any significant projects or achievements you're proud of.",
+            "What are your preferred working locations or are you open to remote work?",
+            "Please provide your contact number for employers (optional but recommended).",
+            "Lastly, any certifications or extra-curricular activities you'd like to include?"
+        ];
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const chatMsg = document.getElementById('chat-messages');
+            chatMsg.innerHTML += `
+                <div class="flex items-start justify-end space-x-4">
+                    <div class="bg-brand-blue text-white p-4 rounded-2xl rounded-tr-none max-w-[80%] font-medium shadow-sm">${text}</div>
+                </div>
+            `;
+            input.value = '';
+            chatMsg.scrollTop = chatMsg.scrollHeight;
+
+            // Handle Resume Flow
+            if (resumeFlowActive) {
+                handleResumeStep(text);
+                return;
+            }
+
+            // LinkedIn Parsing
+            if (text.toLowerCase().includes('linkedin.com/in/')) {
+                sendBotMessage("LinkedIn URL detected! Fetching your professional data from the cloud...");
+                try {
+                    const res = await fetch('http://localhost:8000/parse', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text })
+                    });
+                    const data = await res.json();
+                    if (data.parsed) {
+                        setTimeout(() => {
+                            sendBotMessage(`I've fetched your profile, ${data.name || 'User'}! Found skills: ${data.skills.join(', ')}. Found Education: ${data.education.join(', ')}. Should I update your CareerBridge profile with this information? (Type 'yes' to sync)`);
+                            localStorage.setItem('pendingLinkedInData', JSON.stringify(data));
+                        }, 1000);
+                    }
+                } catch (err) { sendBotMessage("Sorry, I couldn't reach the AI parsing engine. Try again later."); }
+                return;
+            }
+
+            if (text.toLowerCase() === 'yes' && localStorage.getItem('pendingLinkedInData')) {
+                const data = JSON.parse(localStorage.getItem('pendingLinkedInData'));
+                localStorage.removeItem('pendingLinkedInData');
+                syncParsedData(data);
+                return;
+            }
+
+            // Skill Gap / Required Skills Logic
+            if (text.toLowerCase().includes('skill') || text.toLowerCase().includes('gap') || text.toLowerCase().includes('required')) {
+                const careerTitle = localStorage.getItem('selectedCareerTitle') || "your current path";
+                sendBotMessage(`Analyzing skill gaps for your selected path: ${careerTitle}...`);
+
+                try {
+                    const careerId = localStorage.getItem('selectedCareerId');
+                    let requiredSkills = ["Communication", "Problem Solving"]; // Fallback
+                    if (careerId) {
+                        const cres = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                        const roadmap = await cres.json();
+                        requiredSkills = roadmap.flatMap(step => step.skills);
+                    }
+
+                    const res = await fetch('http://localhost:8000/gap-analysis', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_skills: currentUser.skills || [],
+                            required_skills: requiredSkills
+                        })
+                    });
+                    const data = await res.json();
+                    setTimeout(() => {
+                        sendBotMessage(`Analysis complete! Your skill match for ${careerTitle} is **${data.match_percentage}%**. ${data.recommendation}`);
+                    }, 1000);
+                } catch (err) { sendBotMessage("Error analyzing skills. Make sure you've selected a career path in 'Insights'."); }
+                return;
+            }
+
+            // Check for Resume Trigger
+            if (text.toLowerCase().includes('resume') && !resumeFlowActive) {
+                resumeFlowActive = true;
+                resumeStep = 0;
+                resumeData = {};
+                sendBotMessage("I see you want to build an ATS-approved resume! Let's start. " + resumeQuestions[0]);
+                return;
+            }
+
+            // Emotion Analysis & Tone Adjustment
+            try {
+                const emotionRes = await fetch('http://localhost:5000/api/users/emotion-check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ text })
+                });
+                const emData = await emotionRes.json();
+
+                if (emData.priority === 'high' || emData.emotion === 'stressed') {
+                    setTimeout(() => {
+                        sendBotMessage(`I've detected some stress in your message. Career transitions can be tough! Would you like me to recommend a **Career Consultant** who can talk to you 1-on-1?`);
+                    }, 500);
+                } else if (emData.emotion === 'confused') {
+                    setTimeout(() => {
+                        sendBotMessage(`It sounds like you're feeling a bit lost. Let's look at your **Skills Roadmap** to get some clarity.`);
+                    }, 500);
+                }
+            } catch (err) { console.error("Sentiment analysis skipped"); }
+
+            // Default Bot Logic
+            setTimeout(() => {
+                if (!resumeFlowActive && !text.toLowerCase().includes('skill') && !text.toLowerCase().includes('resume')) {
+                    sendBotMessage(`I'm here to help! You can provide a LinkedIn URL, ask about "skill gaps" for your selected path, or say "build resume" to get started.`);
+                }
+            }, 1000);
+        }
+
+        async function syncParsedData(data) {
+            sendBotMessage("Syncing data to your profile...");
+            const payload = {
+                skills: data.skills,
+                experience: data.experience,
+                education: { qualification: data.education[0] || 'Graduate' }
+            };
+            await fetch('http://localhost:5000/api/users/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            fetchUser();
+            sendBotMessage("Profile updated successfully! Check your Profile tab.");
+        }
+
+        function sendBotMessage(msg) {
+            const chatMsg = document.getElementById('chat-messages');
+            chatMsg.innerHTML += `
+                <div class="flex items-start space-x-4">
+                    <div class="w-10 h-10 bg-blue-100 text-brand-blue rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-robot"></i></div>
+                    <div class="bg-slate-50 p-4 rounded-2xl rounded-tl-none text-brand-dark max-w-[80%] font-medium shadow-sm border border-slate-100">${msg}</div>
+                </div>
+            `;
+            chatMsg.scrollTop = chatMsg.scrollHeight;
+        }
+
+        function handleResumeStep(text) {
+            const keys = ["education", "skills", "experience", "objective", "projects", "location", "contact", "certifications"];
+            resumeData[keys[resumeStep]] = text;
+            resumeStep++;
+
+            if (resumeStep < resumeQuestions.length) {
+                setTimeout(() => {
+                    sendBotMessage(resumeQuestions[resumeStep]);
+                }, 800);
+            } else {
+                resumeFlowActive = false;
+                setTimeout(() => {
+                    sendBotMessage("Perfect! I have all the details. Generating your professional ATS Resume now...");
+                    setTimeout(generateResume, 1500);
+                }, 800);
+            }
+        }
+
+        function generateResume() {
+            const resumeHtml = `
+                <div id="ai-resume-card" class="bg-white border-2 border-brand-blue/20 p-6 rounded-2xl shadow-lg mt-4 text-brand-dark">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
+                        <div>
+                            <h2 class="text-2xl font-black">${currentUser.name}</h2>
+                            <p class="text-slate-500 font-bold">${currentUser.email}</p>
+                            <p class="text-slate-400 text-[10px] font-bold uppercase">${resumeData.contact || ''}</p>
+                        </div>
+                        <div class="text-brand-blue opacity-20"><i class="fas fa-file-invoice fa-3x"></i></div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <section>
+                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Career Objective</h4>
+                            <p class="text-xs font-medium italic text-slate-600">${resumeData.objective}</p>
+                        </section>
+                        <section>
+                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Education</h4>
+                            <p class="text-xs font-bold">${resumeData.education}</p>
+                        </section>
+                        <section>
+                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Core Skills</h4>
+                            <div class="flex flex-wrap gap-1">
+                                ${resumeData.skills.split(',').map(s => `<span class="bg-blue-50 text-brand-blue px-2 py-0.5 rounded text-[9px] font-black uppercase">${s.trim()}</span>`).join('')}
+                            </div>
+                        </section>
+                        <section>
+                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Experience</h4>
+                            <p class="text-xs text-slate-600">${resumeData.experience}</p>
+                        </section>
+                    </div>
+                    
+                    <div class="mt-8 pt-4 border-t border-slate-100 flex space-x-2">
+                        <button onclick="downloadResume()" class="flex-1 bg-brand-blue text-white font-bold p-3 rounded-xl text-[10px] flex items-center justify-center space-x-2 uppercase tracking-tight shadow-md shadow-blue-100">
+                            <i class="fas fa-download"></i> <span>Download ATS PDF</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const chatMsg = document.getElementById('chat-messages');
+            const botDiv = document.createElement('div');
+            botDiv.innerHTML = resumeHtml;
+            chatMsg.appendChild(botDiv);
+            chatMsg.scrollTop = chatMsg.scrollHeight;
+
+            syncResumeWithProfile();
+        }
+
+        async function syncResumeWithProfile() {
+            const payload = {
+                skills: resumeData.skills.split(',').map(s => s.trim()).filter(s => s !== ""),
+                experience: resumeData.experience,
+                education: { qualification: resumeData.education }
+            };
+            await fetch('http://localhost:5000/api/users/profile', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify(payload)
+            });
+            fetchUser();
+        }
+
+        function downloadResume() {
+            alert("ATS-Approved Resume generated and saved to your profile! You can now use AI Apply with confidence.");
+        }
+
+        async function loadJobs(filter = '') {
+            const list = document.getElementById('jobs-list');
+            list.innerHTML = `<div class="py-10 text-center text-slate-400 italic">AI is matching jobs and Skill India opportunities... ${filter ? `[Targeting: ${filter}]` : ''}</div>`;
+
+            // Highlight active button
+            document.querySelectorAll('#view-jobs button').forEach(btn => {
+                btn.classList.remove('bg-brand-dark', 'text-white');
+                btn.classList.add('bg-white', 'text-slate-600', 'border', 'border-slate-200');
+                if (btn.innerText.toLowerCase().includes(filter.toLowerCase()) || (filter === '' && btn.innerText.includes('All'))) {
+                    btn.classList.add('bg-brand-dark', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-600', 'border-slate-200');
+                }
+            });
+
+            try {
+                // Fetch applications first to check status
+                const appRes = await fetch('http://localhost:5000/api/users/my-applications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                userApplications = await appRes.json();
+
+                // Fetch Native Jobs
+                const url = filter ? `http://localhost:5000/api/jobs/matched?type=${filter}` : 'http://localhost:5000/api/jobs/matched';
+                const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
+                const jobs = await res.json();
+
+                // Fetch External Skill India Opportunities
+                let externalOpps = [];
+                try {
+                    const extRes = await fetch('http://localhost:5000/api/users/external-opportunities', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    externalOpps = await extRes.json();
+                } catch (e) { console.error("Ext Opps load fail"); }
+
+                list.innerHTML = '';
+
+                if (jobs.length === 0 && externalOpps.length === 0) {
+                    list.innerHTML = '<div class="py-20 text-center text-slate-400 italic font-bold">No opportunities found. AI recommends updating your skills.</div>';
+                    return;
+                }
+
+                // Render External Opps First (Personalized Learning/Internships)
+                externalOpps.forEach(opp => {
+                    list.innerHTML += `
+                        <div onclick="window.open('${opp.link}', '_blank')" class="bg-blue-50/30 p-6 rounded-3xl border border-blue-100 flex flex-col md:flex-row justify-between items-center group hover:border-brand-blue transition-all mb-4 cursor-pointer">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-14 h-14 bg-white rounded-2xl flex items-center justify-center text-xl text-brand-blue shadow-sm"><i class="fas fa-graduation-cap"></i></div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="font-bold text-lg">${opp.title}</h3>
+                                        <span class="bg-brand-blue text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Skill India Digital</span>
+                                    </div>
+                                    <p class="text-slate-500 text-sm italic font-medium">${opp.description}</p>
+                                </div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                                <span class="text-brand-blue font-black text-[10px] uppercase">${opp.type}</span>
+                                <div class="bg-brand-blue text-white px-6 py-2 rounded-xl font-black text-xs hover:scale-105 transition-all shadow-md">Explore Now</div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                // Render Native Jobs
+                jobs.forEach(j => {
+                    const existingApp = userApplications.find(a => a.jobId?._id === j._id || a.jobId === j._id);
+                    let buttonHtml = `<button onclick="applyToJob('${j._id}', this)" class="bg-brand-dark text-white px-6 py-2 rounded-xl font-black text-xs hover:scale-105 transition-all">AI Apply</button>`;
+
+                    if (existingApp) {
+                        const status = existingApp.status === 'Applied' ? 'Pending' : existingApp.status;
+                        const btnColor = status === 'Hired' ? 'bg-brand-green' : (status === 'Pending' ? 'bg-orange-400' : 'bg-slate-400');
+                        buttonHtml = `<button disabled class="${btnColor} text-white px-6 py-2 rounded-xl font-black text-xs cursor-not-allowed">${status}</button>`;
+                    }
+
+                    list.innerHTML += `
+                        <div class="bg-white p-6 rounded-3xl border border-slate-100 flex flex-col md:flex-row justify-between items-center group hover:border-brand-blue transition-all mb-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-14 h-14 bg-slate-100 rounded-2xl flex items-center justify-center text-xl text-slate-400"><i class="fas fa-building"></i></div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h3 class="font-bold text-lg">${j.title}</h3>
+                                        <span class="bg-blue-50 text-brand-blue text-[10px] font-black px-2 py-0.5 rounded-full">${j.matchScore}% Match</span>
+                                    </div>
+                                    <p class="text-slate-500 text-sm italic font-medium">${typeof j.company === 'object' ? j.company.name : j.company} • ${j.location} • <span class="text-brand-blue uppercase text-[10px] font-black">${j.type || 'Full-time'}</span></p>
+                                </div>
+                            </div>
+                            <div class="mt-4 md:mt-0 flex items-center space-x-4">
+                                <span class="text-brand-green font-bold text-sm italic">${j.salary}</span>
+                                ${buttonHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) { list.innerHTML = 'Error loading matched opportunities.'; }
+        }
+
+        async function loadConsultants() {
+            const list = document.getElementById('consultants-list');
+            list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 italic font-bold">Fetching verified experts...</div>';
+
+            const expertise = document.getElementById('filter-expertise').value;
+            const feeLimit = document.getElementById('filter-fee').value;
+            let url = `http://localhost:5000/api/users/consultants/list?`;
+            if (expertise) url += `expertise=${expertise}&`;
+            if (feeLimit) url += `maxFee=${feeLimit}&`;
+
+            try {
+                const res = await fetch(url);
+                const consultants = await res.json();
+                list.innerHTML = '';
+
+                if (consultants.length === 0) {
+                    list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 italic font-bold">No consultants matching your filters yet.</div>';
+                    return;
+                }
+
+                consultants.forEach(c => {
+                    list.innerHTML += `
+                        <div class="bg-white p-6 rounded-[2.5rem] border border-slate-100 hover:border-brand-blue/30 transition-all group relative">
+                            <div class="flex items-center space-x-4 mb-6">
+                                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-brand-blue text-2xl font-black">
+                                    ${c.userId.name.charAt(0)}
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="font-bold text-lg leading-tight">${c.userId.name}</h4>
+                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${c.expertise.join(', ')}</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4 mb-8">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400 font-medium">Experience</span>
+                                    <span class="font-bold text-slate-700">${c.experience} Years</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400 font-medium">Fee</span>
+                                    <span class="font-bold text-brand-green">₹${c.fee} / session</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-slate-400 font-medium">Rating</span>
+                                    <span class="font-bold text-orange-500"><i class="fas fa-star mr-1"></i>${c.rating} (${c.reviewsCount})</span>
+                                </div>
+                            </div>
+                            <button onclick="openBookingModal('${c._id}', '${c.userId.name}', ${c.fee})" class="w-full bg-slate-900 text-white font-bold p-4 rounded-2xl hover:bg-brand-blue transition-all flex items-center justify-center space-x-2">
+                                <span>Book & Pay</span>
+                                <i class="fas fa-wallet text-[10px]"></i>
+                            </button>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                list.innerHTML = 'Error loading consultants.';
+            }
+        }
+
+        let selectedConsultantId = null;
+        let selectedSlot = null;
+        let consultantAvailability = [];
+
+        async function openBookingModal(id, name, fee) {
+            selectedConsultantId = id;
+            document.getElementById('booking-consultant-name').innerText = name;
+            document.getElementById('booking-fee').innerText = '₹' + fee;
+            document.getElementById('booking-modal').classList.remove('hidden');
+
+            // Get Availability
+            try {
+                const res = await fetch(`http://localhost:5000/api/consultants/${id}/availability`);
+                consultantAvailability = await res.json();
+            } catch (err) { console.error('Error fetching availability'); }
+
+            // Set min date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('booking-date').min = today;
+            document.getElementById('booking-date').value = '';
+            document.getElementById('booking-slots').innerHTML = '<div class="col-span-3 text-center text-slate-400 italic text-sm p-4">Select a date first</div>';
+        }
+
+        function closeBookingModal() {
+            document.getElementById('booking-modal').classList.add('hidden');
+            selectedSlot = null;
+        }
+
+        function loadBookingSlots() {
+            const dateStr = document.getElementById('booking-date').value;
+            if (!dateStr) return;
+
+            const date = new Date(dateStr);
+            const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()];
+
+            const dayData = consultantAvailability.find(d => d.day === dayName);
+            const container = document.getElementById('booking-slots');
+
+            if (!dayData || !dayData.slots || dayData.slots.length === 0) {
+                container.innerHTML = '<div class="col-span-3 text-center text-red-400 italic text-sm p-4">No slots available on this day.</div>';
+                return;
+            }
+
+            container.innerHTML = dayData.slots.map((slot, idx) => `
+                <button onclick="selectSlot('${slot.start}', '${slot.end}', this)" class="slot-btn p-2 rounded-lg bg-slate-50 border border-slate-200 text-xs font-bold hover:bg-brand-blue hover:text-white transition-all">
+                    ${slot.start} - ${slot.end}
+                </button>
+            `).join('');
+        }
+
+        function selectSlot(start, end, btn) {
+            document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('bg-brand-blue', 'text-white'));
+            btn.classList.add('bg-brand-blue', 'text-white');
+            selectedSlot = { start, end };
+        }
+
+        async function confirmBooking() {
+            if (!selectedSlot) return alert('Please select a time slot');
+            const dateStr = document.getElementById('booking-date').value;
+            const mode = document.getElementById('booking-mode').value;
+            const fee = document.getElementById('booking-fee').innerText.replace('₹', '');
+
+            // Combine date and time
+            const fullDateTime = new Date(`${dateStr}T${selectedSlot.start}`);
+
+            const btn = event.currentTarget || event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Processing Order...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:5000/api/users/book-session', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        consultantId: selectedConsultantId,
+                        startTime: fullDateTime.toISOString(),
+                        mode,
+                        amount: parseInt(fee)
+                    })
+                });
+
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Order creation failed');
+
+                if (data.skipPayment) {
+                    alert('Success! Session booked successfully (Zero Fee).');
+                    closeBookingModal();
+                    if (typeof showSection === 'function') showSection('sessions');
+                    else location.reload();
+                    return;
+                }
+
+                const options = {
+                    "key": data.keyId,
+                    "amount": data.amount,
+                    "currency": data.currency,
+                    "name": "CareerBridge-AI",
+                    "description": "Expert Consultation Booking",
+                    "order_id": data.orderId,
+                    "handler": async function (response) {
+                        // On success, verify on backend
+                        try {
+                            const vRes = await fetch('http://localhost:5000/api/users/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+
+                            const vData = await vRes.json();
+                            if (vRes.ok) {
+                                alert('Success! Session booked and payment verified.');
+                                closeBookingModal();
+                                if (typeof showSection === 'function') showSection('sessions');
+                                else location.reload();
+                            } else {
+                                alert('Payment verification failed: ' + vData.message);
+                            }
+                        } catch (vErr) {
+                            alert('Payment verification error. Please contact support.');
+                        }
+                    },
+                    "prefill": {
+                        "name": currentUser?.name || "",
+                        "email": currentUser?.email || ""
+                    },
+                    "theme": { "color": "#2563eb" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                alert('Booking failed: ' + err.message);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+
+        async function loadConsultationSessions() {
+            const tbody = document.getElementById('sessions-table');
+            tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">Syncing sessions...</td></tr>';
+            try {
+                const res = await fetch('http://localhost:5000/api/users/my-sessions', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sessions = await res.json();
+                tbody.innerHTML = '';
+
+                if (sessions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400">No sessions booked yet. Consult an expert today!</td></tr>';
+                    return;
+                }
+
+                sessions.forEach(s => {
+                    const scheduledDate = new Date(s.slot.startTime).toLocaleDateString() + ' ' + new Date(s.slot.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    const statusClass = s.status === 'scheduled' ? 'bg-blue-50 text-brand-blue' : (s.status === 'completed' ? 'bg-green-50 text-brand-green' : 'bg-red-50 text-red-500');
+
+                    tbody.innerHTML += `
+                        <tr class="border-t border-slate-50 hover:bg-slate-50 transition-all">
+                            <td class="p-6">
+                                <p class="font-bold">${s.consultantId.userId.name}</p>
+                            </td>
+                            <td class="p-6 text-slate-500 text-xs">${s.consultantId.expertise.join(', ')}</td>
+                            <td class="p-6 text-slate-500 text-sm font-medium">${scheduledDate}</td>
+                            <td class="p-6"><span class="px-3 py-1 rounded-full text-[10px] font-black uppercase ${statusClass}">${s.status}</span></td>
+                            <td class="p-6">
+                                ${s.status === 'scheduled' ? `<button onclick="joinSession('${s._id}', '${s.roomId}')" class="text-brand-blue font-bold text-xs uppercase hover:underline">Join Call</button>` : `<button onclick="viewNotes('${s._id}')" class="text-slate-900 font-bold text-xs uppercase hover:underline">View Notes</button>`}
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (err) {
+                tbody.innerHTML = 'Error loading sessions.';
+            }
+        }
+
+        function joinSession(id, roomId, userId) {
+            // session.html?roomId=...&userId=...
+            // Need to get current userId. 
+            // We can get it from myProfile or decode token.
+            // For now assume `currentUser._id` is available from `fetchUser` global or similar.
+            // Wait, fetchUser sets currentUser? Yes lines 1396.
+            window.open(`session.html?roomId=${roomId}&userId=${currentUser._id}`, '_blank');
+        }
+
+        async function viewNotes(id) {
+            try {
+                // We'll fetch the specific session details from the existing sessions list or a new endpoint
+                // Since loadConsultationSessions already has the data but in a loop, let's fetch it specifically if needed
+                // For simplicity, let's assume we can fetch it or find it in a global sessions array
+                const res = await fetch(`http://localhost:5000/api/users/my-sessions`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const sessions = await res.json();
+                const s = sessions.find(sess => sess._id === id);
+
+                if (!s) return;
+
+                document.getElementById('session-modal').classList.remove('hidden');
+                document.getElementById('session-modal-consultant').innerText = `Consultation with ${s.consultantId.userId.name}`;
+                document.getElementById('session-ai-summary').innerText = s.aiSummary || "AI summary not available for this session.";
+
+                const topicsContainer = document.getElementById('session-ai-topics');
+                topicsContainer.innerHTML = (s.aiKeyTopics || []).map(t => `<span class="bg-white px-3 py-1 rounded-full text-[10px] font-black text-brand-blue border border-brand-blue/20 uppercase tracking-tighter">${t}</span>`).join('');
+
+                document.getElementById('session-suggestions').innerText = s.notes?.suggestions || "None provided.";
+                document.getElementById('session-resume-feedback').innerText = s.notes?.resumeFeedback || "None provided.";
+
+                const skillsContainer = document.getElementById('session-skills');
+                skillsContainer.innerHTML = (s.notes?.skillImprovements || []).map(sk => `<span class="bg-white px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 border border-slate-200">${sk}</span>`).join('');
+                if ((s.notes?.skillImprovements || []).length === 0) skillsContainer.innerHTML = '<span class="text-xs text-slate-400 italic">None</span>';
+
+                const resContainer = document.getElementById('session-resources');
+                resContainer.innerHTML = (s.notes?.learningResources || []).map(r => `<a href="${r}" target="_blank" class="text-xs text-brand-blue font-bold hover:underline block truncate"><i class="fas fa-link mr-1 opacity-50"></i>${r}</a>`).join('');
+                if ((s.notes?.learningResources || []).length === 0) resContainer.innerHTML = '<p class="text-xs text-slate-400 italic">None</p>';
+
+            } catch (err) { alert("Error loading session details."); }
+        }
+
+        function closeSessionModal() {
+            document.getElementById('session-modal').classList.add('hidden');
+        }
+
+        async function checkAIConsultantRecommendation() {
+            if (!currentUser) return;
+            try {
+                const res = await fetch('http://localhost:8000/consultant/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unemployment_risk: currentUser.unemploymentRisk,
+                        career_uncertainty_score: currentUser.careerReadiness < 40 ? 80 : 20,
+                        user_skills: currentUser.skills,
+                        selected_career: currentUser.selectedCareer?.title || 'None'
+                    })
+                });
+                const data = await res.json();
+                if (data.needs_consultant) {
+                    const alertBox = document.getElementById('ai-rec-alert');
+                    const alertText = document.getElementById('ai-rec-text');
+                    alertBox.classList.remove('hidden');
+                    alertText.innerText = `AI Advice: ${data.recommendation_reason} Priority: ${data.priority}`;
+                }
+            } catch (err) {
+                console.error("AI Consultant Rec Error");
+            }
+        }
+
+        function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+        // Wrap existing fetchUser
+        const baseFetchUser = fetchUser;
+        fetchUser = async function () {
+            await baseFetchUser();
+            checkAIConsultantRecommendation();
+        };
+
+        const baseShowSection = showSection;
+        showSection = function (name) {
+            baseShowSection(name);
+            if (name === 'consultants') loadConsultants();
+            if (name === 'my-sessions') loadConsultationSessions();
+        };
+
+        fetchUser();
+    </script>
+    <script>
+// ==================== RISK ANALYSIS FUNCTIONS ====================
+
+let riskGaugeChart = null;
+let currentUserId = null;
+
+// Load Risk Analysis
+async function loadRiskAnalysis() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        // Get user ID from token (decode JWT)
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        currentUserId = payload.id;
+
+        document.getElementById('risk-loading').classList.remove('hidden');
+        document.getElementById('risk-content').classList.add('hidden');
+
+        // Call Risk Analysis API
+        const response = await fetch(`http://localhost:5000/api/risk/user/${currentUserId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to fetch risk analysis');
+
+        const result = await response.json();
+        const data = result.data;
+
+        // Hide loading, show content
+        document.getElementById('risk-loading').classList.add('hidden');
+        document.getElementById('risk-content').classList.remove('hidden');
+
+        // Display Risk Score
+        displayRiskScore(data);
+        
+        // Display Risk Factors
+        displayRiskFactors(data.factors);
+        
+        // Display Recommendations
+        displayRecommendations(data.recommendations);
+
+    } catch (error) {
+        console.error('Risk analysis error:', error);
+        document.getElementById('risk-loading').innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+                <p class="text-slate-600">Error loading risk analysis</p>
+                <button onclick="loadRiskAnalysis()" 
+                    class="mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl">
+                    Try Again
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Display Risk Score with Gauge Chart
+function displayRiskScore(data) {
+    const score = data.riskScore;
+    const level = data.riskLevel;
+    const color = data.riskColor;
+
+    // Update score display
+    document.getElementById('risk-score-display').textContent = score;
+    document.getElementById('risk-score-display').style.color = getColorHex(color);
+
+    // Update level badge
+    const badge = document.getElementById('risk-level-badge');
+    badge.textContent = level + ' Risk';
+    badge.className = `px-4 py-2 rounded-full text-sm font-bold ${getBadgeClass(color)}`;
+
+    // Update level text
+    document.getElementById('risk-level-text').textContent = `Your Risk Level: ${level}`;
+    
+    // Update description
+    const descriptions = {
+        'Critical': 'Your unemployment risk is very high. Immediate action is strongly recommended.',
+        'High': 'Your unemployment risk is above average. Focus on skill development and job search.',
+        'Moderate': 'Your unemployment risk is moderate. Continue building your skills and network.',
+        'Low': 'Your unemployment risk is low. Keep up the good work and stay updated!'
+    };
+    document.getElementById('risk-description').textContent = descriptions[level] || 'Analysis complete.';
+
+    // Create Gauge Chart
+    createRiskGauge(score, color);
+}
+
+// Create Gauge Chart using Chart.js
+function createRiskGauge(score, color) {
+    const ctx = document.getElementById('riskGaugeChart');
+    
+    // Destroy existing chart
+    if (riskGaugeChart) {
+        riskGaugeChart.destroy();
+    }
+
+    const data = {
+        datasets: [{
+            data: [score, 100 - score],
+            backgroundColor: [
+                getColorHex(color),
+                '#e2e8f0'
+            ],
+            borderWidth: 0,
+            circumference: 180,
+            rotation: 270
+        }]
+    };
+
+    riskGaugeChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false }
+            },
+            cutout: '75%'
+        }
+    });
+}
+
+// Display Risk Factors
+function displayRiskFactors(factors) {
+    const container = document.getElementById('risk-factors-list');
+    container.innerHTML = '';
+
+    factors.forEach(factor => {
+        const factorDiv = document.createElement('div');
+        factorDiv.className = 'flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100';
+        factorDiv.innerHTML = `
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-times-circle text-red-500"></i>
+                <span class="text-slate-700 font-medium">${factor.factor}</span>
+            </div>
+            <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm font-bold">
+                +${factor.impact} pts
+            </span>
+        `;
+        container.appendChild(factorDiv);
+    });
+}
+
+// Display Recommendations
+function displayRecommendations(recommendations) {
+    // Immediate Actions
+    const actionsContainer = document.getElementById('immediate-actions-list');
+    actionsContainer.innerHTML = '';
+    recommendations.immediate_actions.forEach((action, index) => {
+        const actionDiv = document.createElement('div');
+        actionDiv.className = 'flex items-start space-x-3 p-3 bg-white rounded-lg border border-slate-200';
+        actionDiv.innerHTML = `
+            <span class="flex-shrink-0 w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                ${index + 1}
+            </span>
+            <p class="text-slate-700 text-sm">${action}</p>
+        `;
+        actionsContainer.appendChild(actionDiv);
+    });
+
+    // Skill Recommendations
+    const skillsContainer = document.getElementById('skill-recommendations-list');
+    skillsContainer.innerHTML = '';
+    recommendations.skill_recommendations.forEach(skill => {
+        const skillBadge = document.createElement('span');
+        skillBadge.className = 'px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold';
+        skillBadge.textContent = skill;
+        skillsContainer.appendChild(skillBadge);
+    });
+
+    // Career Path
+    document.getElementById('career-path-text').textContent = recommendations.career_path;
+
+    // Motivation
+    document.getElementById('motivation-text').textContent = recommendations.motivation;
+}
+
+// Refresh Risk Analysis
+async function refreshRiskAnalysis() {
+    await loadRiskAnalysis();
+}
+
+// Helper Functions
+function getColorHex(color) {
+    const colors = {
+        'red': '#ef4444',
+        'orange': '#f97316',
+        'yellow': '#eab308',
+        'green': '#22c55e'
+    };
+    return colors[color] || '#64748b';
+}
+
+function getBadgeClass(color) {
+    const classes = {
+        'red': 'bg-red-100 text-red-700',
+        'orange': 'bg-orange-100 text-orange-700',
+        'yellow': 'bg-yellow-100 text-yellow-700',
+        'green': 'bg-green-100 text-green-700'
+    };
+    return classes[color] || 'bg-slate-100 text-slate-700';
+}
+
+
+</script>
+</body>
+
+</html>

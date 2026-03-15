@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Interview Simulator | CareerBridge-AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --brand-blue: #2563eb;
+            --brand-blue-light: #60a5fa;
+            --brand-dark: #0f172a;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: radial-gradient(circle at top right, #f8fafc, #eff6ff);
+            overflow-x: hidden;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .interview-card {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+        }
+
+        .visualizer-bar {
+            width: 4px;
+            background: var(--brand-blue);
+            border-radius: 2px;
+            margin: 0 2px;
+            transition: height 0.1s ease;
+        }
+
+        .pulse {
+            animation: pulse-ring 1.25s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+        }
+
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(.33);
+            }
+
+            80%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--brand-blue), #9333ea);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-4xl w-full">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-12" id="header">
+            <div class="flex items-center space-x-3">
+                <div
+                    class="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 tracking-tight">AI interview <span
+                            class="text-brand-blue">Coach</span></h1>
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Real-time Feedback Engine</p>
+                </div>
+            </div>
+            <a href="dashboard.html"
+                class="glass px-6 py-3 rounded-2xl text-sm font-bold text-slate-600 hover:text-brand-blue transition-all flex items-center space-x-2">
+                <i class="fas fa-arrow-left text-xs"></i>
+                <span>Back to Dashboard</span>
+            </a>
+        </header>
+
+        <!-- Setup Screen -->
+        <div id="setup-screen"
+            class="glass p-12 rounded-[3rem] interview-card text-center space-y-8 animate-in fade-in duration-500">
+            <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-user-tie text-4xl text-brand-blue"></i>
+            </div>
+            <div>
+                <h2 class="text-3xl font-black text-slate-900 mb-2">Ready to practice?</h2>
+                <p class="text-slate-500 max-w-sm mx-auto">Select your target role and our AI will conduct a realistic
+                    mock interview with real-time evaluation.</p>
+            </div>
+
+            <div class="max-w-xs mx-auto space-y-4">
+                <select id="role-select"
+                    class="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-brand-blue font-bold text-slate-700">
+                    <optgroup label="💻 Tech Roles">
+                        <option value="Software Engineer">Software Engineer</option>
+                        <option value="Web Developer">Web Developer</option>
+                        <option value="Data Analyst">Data Analyst</option>
+                        <option value="Data Scientist">Data Scientist</option>
+                        <option value="Product Designer">Product Designer</option>
+                    </optgroup>
+                    <optgroup label="📊 Business Roles">
+                        <option value="Marketing Manager">Marketing Manager</option>
+                    </optgroup>
+                </select>
+                <button onclick="startInterview()"
+                    class="w-full bg-slate-900 text-white font-black py-5 rounded-3xl shadow-2xl hover:bg-brand-blue transition-all group">
+                    <span>Initiate Interview</span>
+                    <i class="fas fa-bolt ml-2 text-yellow-400 group-hover:scale-125 transition-transform"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Simulation Screen -->
+        <div id="interview-screen" class="hidden space-y-6">
+            <div class="glass p-10 rounded-[3rem] interview-card">
+                <div class="flex justify-between items-center mb-10">
+                    <div class="px-4 py-2 bg-blue-50 text-brand-blue rounded-full text-[10px] font-black uppercase tracking-widest"
+                        id="question-tag">Question 1 / 5</div>
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live
+                            Analysis</span>
+                    </div>
+                </div>
+
+                <div class="space-y-8 mb-12 min-h-[120px]">
+                    <h3 id="current-question" class="text-2xl font-bold text-slate-900 leading-tight">...</h3>
+                </div>
+
+                <!-- Visualizer and Control -->
+                <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 flex flex-col items-center">
+                    <div id="visualizer" class="h-16 flex items-end justify-center mb-8">
+                        <!-- Bars injected by JS -->
+                    </div>
+
+                    <button id="mic-btn" onclick="toggleListening()"
+                        class="w-20 h-20 bg-brand-blue text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:scale-110 active:scale-95 transition-all relative">
+                        <i id="mic-icon" class="fas fa-microphone text-2xl"></i>
+                        <div id="mic-pulse" class="absolute inset-0 bg-brand-blue rounded-full opacity-20 hidden pulse">
+                        </div>
+                    </button>
+                    <p id="listen-status" class="mt-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                        Tap to start speaking</p>
+                </div>
+
+                <!-- Transcript -->
+                <div class="mt-8">
+                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Live Transcript</p>
+                    <div class="p-4 bg-white/50 border border-slate-100 rounded-2xl min-h-[60px] text-sm text-slate-600 italic"
+                        id="transcript">
+                        Waiting for response...
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center px-4">
+                <button onclick="skipQuestion()"
+                    class="text-xs font-bold text-slate-400 hover:text-slate-600 transition-all uppercase tracking-widest">Skip
+                    Question</button>
+                <button id="submit-btn" onclick="submitAnswer()"
+                    class="bg-white text-brand-blue font-black px-8 py-4 rounded-2xl shadow-sm border border-brand-blue/10 hidden">
+                    Analyze & Next <i class="fas fa-chevron-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="hidden space-y-8">
+            <div class="glass p-12 rounded-[3rem] interview-card text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-blue to-purple-600"></div>
+
+                <div class="mb-8">
+                    <div
+                        class="w-24 h-24 bg-slate-50 border-4 border-white rounded-full flex items-center justify-center mx-auto shadow-sm mb-4">
+                        <span id="final-score" class="text-3xl font-black gradient-text">0</span>
+                    </div>
+                    <h2 class="text-2xl font-black text-slate-900">Performance Review</h2>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+                    <div class="p-8 bg-blue-50/50 rounded-[2rem] border border-blue-100">
+                        <h4 class="text-[10px] font-black text-brand-blue uppercase tracking-widest mb-4">Feedback</h4>
+                        <p id="final-feedback" class="text-slate-700 text-sm font-medium leading-relaxed"></p>
+                    </div>
+                    <div class="p-8 bg-purple-50/50 rounded-[2rem] border border-purple-100">
+                        <h4 class="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-4">Growth Areas
+                        </h4>
+                        <ul id="improvement-list" class="space-y-3">
+                            <!-- Injected -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="mt-12 pt-8 border-t border-slate-100 flex justify-center space-x-4">
+                    <button onclick="location.reload()"
+                        class="px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:scale-105 transition-all">Restart
+                        Simulation</button>
+                    <a href="dashboard.html"
+                        class="px-8 py-4 bg-white border border-slate-200 text-slate-600 font-bold rounded-2xl hover:bg-slate-50 transition-all">Go
+                        Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = 'login.html';
+
+        let currentRole = "";
+        let questions = [];
+        let currentIndex = 0;
+        let recognition = null;
+        let transcriptText = "";
+        let isListening = false;
+        let interviewData = [];
+
+        const QUESTIONS_MAP = {
+            "Software Engineer": [
+                "Tell me about a challenging technical project you led at scale.",
+                "How do you handle disagreement with a teammate on system architecture?",
+                "Describe your experience with CI/CD pipelines and automated testing.",
+                "What is your approach to optimizing slow database queries?",
+                "How do you ensure code quality in a fast-paced team environment?"
+            ],
+            "Web Developer": [
+                "Walk me through how you would optimize a website's performance from 5s to under 1s load time.",
+                "How do you handle cross-browser compatibility issues in CSS and JavaScript?",
+                "Describe a full-stack feature you built end-to-end — from database to UI.",
+                "How do you approach responsive design for mobile-first development?",
+                "What is your workflow for debugging a production issue that only appears intermittently?",
+                "How do you stay updated with frontend frameworks like React, Vue, or Angular?",
+                "Explain the difference between REST and GraphQL APIs and when you'd choose each."
+            ],
+            "Data Analyst": [
+                "Describe a time you found a critical business insight from data that others had missed.",
+                "How do you handle dirty, inconsistent, or missing data in a large dataset?",
+                "Walk me through your process for building a dashboard from scratch — tools, design, and metrics.",
+                "How do you communicate a complex data finding to a non-technical business stakeholder?",
+                "Tell me about a SQL query you wrote that solved a complex business problem.",
+                "What is the difference between correlation and causation? Give a real-world example.",
+                "How do you decide which visualization type to use for different kinds of data?"
+            ],
+            "Data Scientist": [
+                "What is your favorite ML algorithm and why? When would you NOT use it?",
+                "How do you handle class imbalance in a binary classification problem?",
+                "Tell me about a time your model gave unexpected results — how did you debug it?",
+                "How do you explain model predictions (like SHAP values) to non-technical stakeholders?",
+                "Describe a project where you deployed an ML model to production. What challenges did you face?",
+                "What is the difference between bagging and boosting? When would you prefer each?",
+                "How do you prevent overfitting in a deep learning model?"
+            ],
+            "Marketing Manager": [
+                "What was your most successful marketing campaign and what KPIs did you measure?",
+                "How do you handle a branding crisis on social media in real-time?",
+                "Describe your process for identifying and building audience personas.",
+                "Tell me about a time you had to pivot a campaign mid-way. What triggered it?",
+                "How do you balance creative storytelling with data-driven marketing decisions?"
+            ],
+            "Product Designer": [
+                "Walk me through your design process from research to final handoff.",
+                "Describe a time you had to redesign something because users weren't engaging with it.",
+                "How do you handle conflicting feedback from different stakeholders?",
+                "How do you balance aesthetics with accessibility in your designs?",
+                "Tell me about a UX problem you solved that had measurable business impact."
+            ]
+        };
+
+        // ── Career Auto-fill from Dashboard ──────────────────────────────────
+        // Jab dashboard se "Practice Interview" button se aao, career auto-select ho
+        document.addEventListener('DOMContentLoaded', () => {
+            const saved = localStorage.getItem('selectedCareer');
+            if (saved) {
+                const sel = document.getElementById('role-select');
+                for (let opt of sel.options) {
+                    if (opt.value === saved) { sel.value = saved; break; }
+                }
+            }
+        });
+        // ─────────────────────────────────────────────────────────────────────
+
+        async function startInterview() {
+            currentRole = document.getElementById('role-select').value;
+
+            // Button ko loading state me daalo
+            const btn = document.querySelector('button[onclick="startInterview()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Questions Generate Ho Rahe Hain...';
+            btn.disabled = true;
+
+            // Pehle Gemini se dynamic questions try karo
+            try {
+                const token = localStorage.getItem('token');
+                const res = await fetch('http://localhost:5000/api/users/interview/generate-questions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ career: currentRole, difficulty: 'Medium' })
+                });
+                const data = await res.json();
+
+                if (data.questions && data.questions.length > 0) {
+                    // Gemini se aaye objects se sirf question string extract karo
+                    questions = data.questions.map(q => q.question);
+                } else {
+                    // Fallback: local QUESTIONS_MAP
+                    questions = QUESTIONS_MAP[currentRole] || QUESTIONS_MAP["Software Engineer"];
+                }
+            } catch (err) {
+                // Offline/error fallback — local questions use karo
+                console.log('Gemini fallback to local questions:', err.message);
+                questions = QUESTIONS_MAP[currentRole] || QUESTIONS_MAP["Software Engineer"];
+            }
+
+            // Button restore karo
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+
+            // GSAP animation — setup screen hide, interview screen show
+            gsap.to("#setup-screen", {
+                opacity: 0, y: -20, duration: 0.5, onComplete: () => {
+                    document.getElementById('setup-screen').classList.add('hidden');
+                    document.getElementById('interview-screen').classList.remove('hidden');
+                    showQuestion();
+                }
+            });
+        }
+
+        function showQuestion() {
+            if (currentIndex >= questions.length) {
+                showFinalResults();
+                return;
+            }
+
+            const q = questions[currentIndex];
+            document.getElementById('question-tag').innerText = `Question ${currentIndex + 1} / ${questions.length}`;
+            const qEl = document.getElementById('current-question');
+
+            gsap.fromTo(qEl, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+            qEl.innerText = q;
+
+            // Speak question
+            const utterance = new SpeechSynthesisUtterance(q);
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+
+            // Reset transcript
+            transcriptText = "";
+            document.getElementById('transcript').innerText = "Waiting for response...";
+            document.getElementById('submit-btn').classList.add('hidden');
+        }
+
+        function toggleListening() {
+            if (isListening) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        }
+
+        function startListening() {
+            if (!('webkitSpeechRecognition' in window)) {
+                alert("Speech recognition not supported in this browser.");
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('mic-icon').className = 'fas fa-stop';
+                document.getElementById('mic-btn').classList.replace('bg-brand-blue', 'bg-red-500');
+                document.getElementById('mic-pulse').classList.remove('hidden');
+                document.getElementById('listen-status').innerText = "Listening... Tap to stop";
+                startVisualizer();
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        transcriptText += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                document.getElementById('transcript').innerText = transcriptText + interimTranscript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error(event.error);
+                stopListening();
+            };
+
+            recognition.onend = () => {
+                stopListening();
+            };
+
+            recognition.start();
+        }
+
+        function stopListening() {
+            if (recognition) recognition.stop();
+            isListening = false;
+            document.getElementById('mic-icon').className = 'fas fa-microphone';
+            document.getElementById('mic-btn').classList.replace('bg-red-500', 'bg-brand-blue');
+            document.getElementById('mic-pulse').classList.add('hidden');
+            document.getElementById('listen-status').innerText = "Tap to speak again";
+            stopVisualizer();
+
+            if (transcriptText.length > 5) {
+                document.getElementById('submit-btn').classList.remove('hidden');
+            }
+        }
+
+        async function submitAnswer() {
+            const btn = document.getElementById('submit-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('http://localhost:5000/api/users/interview/evaluate', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        role: currentRole,
+                        question: questions[currentIndex],
+                        answer: transcriptText
+                    })
+                });
+                const data = await res.json();
+                interviewData.push(data);
+
+                currentIndex++;
+                btn.innerHTML = 'Analyze & Next <i class="fas fa-chevron-right ml-2"></i>';
+                btn.disabled = false;
+                showQuestion();
+
+            } catch (e) {
+                alert("Evaluation failed. Proceeding to next.");
+                currentIndex++;
+                showQuestion();
+            }
+        }
+
+        function skipQuestion() {
+            currentIndex++;
+            showQuestion();
+        }
+
+        function showFinalResults() {
+            document.getElementById('interview-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+
+            const avgScore = interviewData.reduce((acc, curr) => acc + curr.score, 0) / (interviewData.length || 1);
+            document.getElementById('final-score').innerText = Math.round(avgScore);
+
+            const feedbacks = interviewData.map(d => d.feedback).join(' ');
+            document.getElementById('final-feedback').innerText = feedbacks || "Simulation complete. Review your performance per question below.";
+
+            const improvements = Array.from(new Set(interviewData.flatMap(d => d.improvement_areas)));
+            const list = document.getElementById('improvement-list');
+            list.innerHTML = improvements.map(i => `
+                <li class="flex items-center text-sm font-bold text-slate-600">
+                    <span class="w-2 h-2 bg-purple-400 rounded-full mr-3"></span>
+                    ${i}
+                </li>
+            `).join('');
+
+            gsap.from("#result-screen > div", { opacity: 0, scale: 0.95, duration: 0.8, ease: "back.out(1.7)" });
+        }
+
+        // UI Visualizer Mock
+        let visInterval = null;
+        function startVisualizer() {
+            const container = document.getElementById('visualizer');
+            container.innerHTML = '';
+            for (let i = 0; i < 20; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'visualizer-bar';
+                bar.style.height = '10px';
+                container.appendChild(bar);
+            }
+
+            visInterval = setInterval(() => {
+                document.querySelectorAll('.visualizer-bar').forEach(bar => {
+                    const h = Math.random() * 40 + 10;
+                    bar.style.height = h + 'px';
+                });
+            }, 100);
+        }
+
+        function stopVisualizer() {
+            clearInterval(visInterval);
+            document.querySelectorAll('.visualizer-bar').forEach(bar => bar.style.height = '4px');
+        }
+
+        // Entrance animation
+        gsap.from("#header", { y: -20, opacity: 0, duration: 1 });
+        gsap.from("#setup-screen", { y: 20, opacity: 0, delay: 0.3, duration: 1 });
+    </script>
+</body>
+
+</html>

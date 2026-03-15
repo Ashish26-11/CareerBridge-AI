@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CareerBridge-AI | AI-Powered Bridge to Employment</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
+                    colors: {
+                        brand: {
+                            blue: '#2563eb',
+                            green: '#10b981',
+                            dark: '#0f172a',
+                            light: '#f8fafc'
+                        }
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'spin-slow': 'spin 8s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes blob {
+            0% {
+                transform: translate(0px, 0px) scale(1);
+            }
+
+            33% {
+                transform: translate(30px, -50px) scale(1.1);
+            }
+
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+
+            100% {
+                transform: translate(0px, 0px) scale(1);
+            }
+        }
+
+        .animate-blob {
+            animation: blob 7s infinite;
+        }
+
+        .animation-delay-2000 {
+            animation-delay: 2s;
+        }
+
+        .animation-delay-4000 {
+            animation-delay: 4s;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        .hero-gradient {
+            background: radial-gradient(circle at 20% 30%, rgba(37, 99, 235, 0.15), transparent 40%),
+                radial-gradient(circle at 80% 70%, rgba(16, 185, 129, 0.15), transparent 40%),
+                linear-gradient(to bottom, #ffffff, #f8fafc);
+        }
+
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+
+        .card-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.3s ease;
+        }
+
+        .card-3d:hover {
+            transform: rotateY(10deg) rotateX(5deg) scale(1.02);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #2563eb 0%, #10b981 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .floating-object {
+            filter: blur(40px);
+            border-radius: 50%;
+            position: absolute;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+
+<body class="bg-brand-light text-brand-dark antialiased selection:bg-brand-blue selection:text-white">
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <div
+                    class="w-10 h-10 bg-brand-blue rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                    <i class="fas fa-bridge text-lg"></i>
+                </div>
+                <span class="text-2xl font-black tracking-tight">CareerBridge<span
+                        class="text-brand-blue">AI</span></span>
+            </div>
+
+            <div
+                class="hidden lg:flex items-center space-x-10 font-bold text-sm uppercase tracking-wider text-slate-500">
+                <a href="#how-it-works" class="hover:text-brand-blue transition-colors">How it works</a>
+                <a href="#seekers" class="hover:text-brand-blue transition-colors">For Seekers</a>
+                <a href="#employers" class="hover:text-brand-blue transition-colors">For Employers</a>
+                <a href="#impact" class="hover:text-brand-blue transition-colors">Impact</a>
+            </div>
+
+            <div class="flex items-center space-x-4" id="auth-buttons">
+                <a href="login.html" class="text-sm font-bold text-slate-600 hover:text-brand-blue px-4">Login</a>
+                <a href="signup.html"
+                    class="bg-brand-dark text-white px-8 py-3 rounded-full font-black text-sm shadow-xl hover:scale-105 transition-all">Join
+                    Platform</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-32 pb-20 overflow-hidden hero-gradient">
+        <!-- Floating Background Elements -->
+        <div class="floating-object w-96 h-96 bg-blue-400 -top-20 -left-20 animate-blob"></div>
+        <div class="floating-object w-80 h-80 bg-green-300 top-1/2 -right-20 animate-blob animation-delay-2000"></div>
+        <div class="floating-object w-64 h-64 bg-purple-300 bottom-0 left-1/3 animate-blob animation-delay-4000"></div>
+
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="max-w-4xl mx-auto text-center">
+                <div
+                    class="inline-flex items-center space-x-2 bg-white/50 backdrop-blur border border-slate-200 px-4 py-2 rounded-full mb-8 shadow-sm">
+                    <span class="flex h-2 w-2 rounded-full bg-brand-green animate-ping"></span>
+                    <span class="text-xs font-black uppercase tracking-widest text-slate-500 italic">Bridging Bharat's
+                        Skill Gap</span>
+                </div>
+
+                <h1
+                    class="hero-title text-6xl lg:text-8xl font-black leading-[1.05] mb-8 text-slate-900 tracking-tighter">
+                    AI-Powered Bridge <br>
+                    To Your <span class="gradient-text">Future</span>
+                </h1>
+
+                <p class="text-xl text-slate-500 font-medium max-w-2xl mx-auto mb-12">
+                    A unified employment execution ecosystem for unemployed youth, employers, and government skill
+                    partners.
+                </p>
+
+                <!-- Action Hub -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+                    <div class="group">
+                        <a href="signup.html?role=user"
+                            class="block p-6 bg-white rounded-3xl shadow-xl shadow-blue-100 border border-slate-100 hover:border-brand-blue hover:-translate-y-2 transition-all duration-300">
+                            <div
+                                class="w-12 h-12 bg-blue-50 text-brand-blue rounded-2xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-user-graduate"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-900 mb-1">Get Career Guidance</h4>
+                            <p class="text-xs text-slate-400 font-medium">For Unemployed Youth</p>
+                        </a>
+                    </div>
+                    <div class="group">
+                        <a href="signup.html?role=employer"
+                            class="block p-6 bg-white rounded-3xl shadow-xl shadow-green-100 border border-slate-100 hover:border-brand-green hover:-translate-y-2 transition-all duration-300">
+                            <div
+                                class="w-12 h-12 bg-green-50 text-brand-green rounded-2xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-900 mb-1">Post a Job</h4>
+                            <p class="text-xs text-slate-400 font-medium">For Recruiters & Firms</p>
+                        </a>
+                    </div>
+                    <div class="group">
+                        <a href="#schemes"
+                            class="block p-6 bg-white rounded-3xl shadow-xl shadow-slate-100 border border-slate-100 hover:border-brand-dark hover:-translate-y-2 transition-all duration-300">
+                            <div
+                                class="w-12 h-12 bg-slate-50 text-slate-900 rounded-2xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-900 mb-1">Explore Schemes</h4>
+                            <p class="text-xs text-slate-400 font-medium">Govt & Skill Partners</p>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works section -->
+    <section id="how-it-works" class="py-24 bg-white relative">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl lg:text-5xl font-black text-slate-900 mb-4">How CareerBridge-AI Works</h2>
+                <p class="text-slate-500 font-medium">The complete AI-driven journey from profile to paycheck.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 relative">
+                <!-- Journey Path Line (Desktop) -->
+                <div class="hidden md:block absolute top-[60px] left-[10%] right-[10%] h-[2px] bg-slate-100 z-0"></div>
+
+                <!-- Cards -->
+                <div class="relative z-10 text-center space-y-4">
+                    <div
+                        class="w-12 h-12 bg-brand-dark text-white rounded-full flex items-center justify-center font-black mx-auto shadow-xl ring-4 ring-white">
+                        1</div>
+                    <h4 class="font-extrabold text-sm uppercase text-slate-900">Create Profile</h4>
+                    <p class="text-xs text-slate-400 font-medium px-4">Instant onboarding for youth & firms.</p>
+                </div>
+                <div class="relative z-10 text-center space-y-4">
+                    <div
+                        class="w-12 h-12 bg-brand-blue text-white rounded-full flex items-center justify-center font-black mx-auto shadow-xl ring-4 ring-white">
+                        2</div>
+                    <h4 class="font-extrabold text-sm uppercase text-brand-blue">AI Analysis</h4>
+                    <p class="text-xs text-slate-400 font-medium px-4">Deep scan of skills vs industry risk.</p>
+                </div>
+                <div class="relative z-10 text-center space-y-4">
+                    <div
+                        class="w-12 h-12 bg-brand-dark text-white rounded-full flex items-center justify-center font-black mx-auto shadow-xl ring-4 ring-white">
+                        3</div>
+                    <h4 class="font-extrabold text-sm uppercase text-slate-900">Get Roadmap</h4>
+                    <p class="text-xs text-slate-400 font-medium px-4">Personalized steps to bridge skills.</p>
+                </div>
+                <div class="relative z-10 text-center space-y-4">
+                    <div
+                        class="w-12 h-12 bg-brand-green text-white rounded-full flex items-center justify-center font-black mx-auto shadow-xl ring-4 ring-white">
+                        4</div>
+                    <h4 class="font-extrabold text-sm uppercase text-brand-green">Match Jobs</h4>
+                    <p class="text-xs text-slate-400 font-medium px-4">Smart connection with verified recruiters.</p>
+                </div>
+                <div class="relative z-10 text-center space-y-4">
+                    <div
+                        class="w-12 h-12 bg-brand-dark text-white rounded-full flex items-center justify-center font-black mx-auto shadow-xl ring-4 ring-white">
+                        5</div>
+                    <h4 class="font-extrabold text-sm uppercase text-slate-900">Get Hired</h4>
+                    <p class="text-xs text-slate-400 font-medium px-4">Seamless application & interview flow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Job Seekers -->
+    <section id="seekers" class="py-24 bg-slate-50 overflow-hidden">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="lg:w-1/2 space-y-8">
+                    <div
+                        class="inline-block px-4 py-2 bg-blue-100 text-brand-blue rounded-xl text-xs font-black uppercase tracking-widest">
+                        For Unemployed Youth</div>
+                    <h2 class="text-4xl lg:text-5xl font-black text-slate-900">Build Your Career with <br>AI
+                        Intelligence</h2>
+                    <p class="text-lg text-slate-500 font-medium leading-relaxed">Stop applying blindly. Use AI to
+                        understand your risk, bridge your gaps, and stand out to top employers without even needing a
+                        complex resume.</p>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="flex items-start space-x-4">
+                            <div
+                                class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-brand-blue shrink-0">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">AI Recommendations</h4>
+                                <p class="text-sm text-slate-400">Personalized career paths.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div
+                                class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-brand-green shrink-0">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">Skill Roadmaps</h4>
+                                <p class="text-sm text-slate-400">Exact learning steps.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div
+                                class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-orange-500 shrink-0">
+                                <i class="fas fa-file-invoice"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">Zero Resume Mode</h4>
+                                <p class="text-sm text-slate-400">Skills-first application.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div
+                                class="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-purple-500 shrink-0">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">Matched Jobs</h4>
+                                <p class="text-sm text-slate-400">Pre-vetted opportunities.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="signup.html"
+                        class="inline-flex items-center space-x-3 bg-brand-blue text-white px-10 py-5 rounded-3xl font-black text-lg shadow-2xl shadow-blue-200 hover:scale-[1.05] transition-all">
+                        <span>Start Your Career Journey</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="lg:w-1/2 relative perspective-1000">
+                    <div class="glass-card p-4 rounded-[3rem] hover-3d rotate-3">
+                        <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=800"
+                            alt="Career Success" class="rounded-[2.5rem] shadow-2xl">
+                        <div
+                            class="absolute -bottom-10 -left-10 bg-white p-8 rounded-3xl shadow-2xl animate-float border border-slate-100 max-w-[200px]">
+                            <p class="text-[10px] font-black uppercase text-slate-400 mb-2">AI Status</p>
+                            <p class="text-sm font-bold text-slate-900 italic">"94% Match found for Digital Marketing in
+                                your area!"</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For Employers -->
+    <section id="employers" class="py-24 bg-brand-dark text-white overflow-hidden relative">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col lg:flex-row-reverse items-center gap-16">
+                <div class="lg:w-1/2 space-y-8">
+                    <div
+                        class="inline-block px-4 py-2 bg-green-500/10 text-brand-green rounded-xl text-xs font-black uppercase tracking-widest border border-brand-green/20">
+                        For Employers</div>
+                    <h2 class="text-4xl lg:text-5xl font-black">Find Pre-Vetted, AI-Skilled Talent</h2>
+                    <p class="text-lg text-slate-400 font-medium leading-relaxed">Save weeks of filtering. Our AI
+                        matches your job descriptions with candidates who actually have the skills, showing you their
+                        match score and readiness instantly.</p>
+
+                    <ul class="space-y-4">
+                        <li class="flex items-center space-x-4 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                            <div class="text-brand-green"><i class="fas fa-check-circle"></i></div>
+                            <span class="font-bold">Post Jobs Easily in Minutes</span>
+                        </li>
+                        <li class="flex items-center space-x-4 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                            <div class="text-brand-green"><i class="fas fa-bullseye"></i></div>
+                            <span class="font-bold">AI Autofilter Matched Candidates</span>
+                        </li>
+                        <li class="flex items-center space-x-4 p-4 bg-slate-800/50 rounded-2xl border border-slate-700">
+                            <div class="text-brand-green"><i class="fas fa-bolt"></i></div>
+                            <span class="font-bold">Hire or Reject with One Click</span>
+                        </li>
+                    </ul>
+
+                    <a href="signup.html?role=employer"
+                        class="inline-flex items-center space-x-3 bg-brand-green text-white px-10 py-5 rounded-3xl font-black text-lg shadow-2xl shadow-green-900/40 hover:scale-[1.05] transition-all">
+                        <span>Hire Skilled Talent</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="lg:w-1/2">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-brand-green rounded-full blur-[100px] opacity-20"></div>
+                        <div class="grid grid-cols-2 gap-4 relative">
+                            <div class="p-8 bg-slate-800 rounded-3xl border border-slate-700 space-y-4 translate-y-10">
+                                <div
+                                    class="w-12 h-12 bg-slate-700 rounded-xl flex items-center justify-center text-brand-green">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h4 class="text-3xl font-black">94%</h4>
+                                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Hiring Efficiency
+                                </p>
+                            </div>
+                            <div class="p-8 bg-brand-green rounded-3xl space-y-4">
+                                <div
+                                    class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-white">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <h4 class="text-3xl font-black">5k+</h4>
+                                <p class="text-xs text-white/60 font-bold uppercase tracking-widest">Active Candidates
+                                </p>
+                            </div>
+                            <div class="col-span-2 p-8 bg-slate-800 rounded-3xl border border-slate-700">
+                                <p class="text-slate-400 text-sm italic font-medium">"AI Match Score: 98% for Senior Web
+                                    Developer role found within 24 hours."</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Govt Schemes Section -->
+    <section id="schemes" class="py-24 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16 max-w-2xl mx-auto">
+                <h2 class="text-3xl lg:text-5xl font-black text-slate-900 mb-4 uppercase">Verified Govt Support</h2>
+                <p class="text-slate-500 font-medium">We only redirect you to official government portals.
+                    CareerBridge-AI acts as your bridge to state and central benefits.</p>
+                <div class="flex flex-wrap justify-center items-center gap-8 mt-12 grayscale opacity-30">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/2/21/Skill_India_logo.png" alt="Skill India"
+                        class="h-12">
+                    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/e/e4/NSDC_logo.svg/1200px-NSDC_logo.svg.png"
+                        alt="NSDC" class="h-12">
+                    <img src="https://seeklogo.com/images/M/my-gov-logo-0A20973F02-seeklogo.com.png" alt="MyGov"
+                        class="h-10">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div
+                    class="p-8 bg-brand-light rounded-3xl border border-slate-100 hover:border-brand-blue/30 transition-all group">
+                    <h4 class="font-black text-slate-900 mb-3 group-hover:text-brand-blue">Skill India Portal</h4>
+                    <p class="text-xs text-slate-500 font-medium mb-6">Discover vocational training and certifications
+                        across Bharat.</p>
+                    <a href="https://www.skillindia.gov.in/" target="_blank"
+                        class="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center">
+                        Visit Official Site <i class="fas fa-external-link-alt ml-2"></i>
+                    </a>
+                </div>
+                <div
+                    class="p-8 bg-brand-light rounded-3xl border border-slate-100 hover:border-brand-blue/30 transition-all group">
+                    <h4 class="font-black text-slate-900 mb-3 group-hover:text-brand-blue">PMKVY</h4>
+                    <p class="text-xs text-slate-500 font-medium mb-6">Pradhan Mantri Kaushal Vikas Yojana – Flagship
+                        skill training.</p>
+                    <a href="https://www.pmkvyofficial.org/" target="_blank"
+                        class="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center">
+                        Visit Official Site <i class="fas fa-external-link-alt ml-2"></i>
+                    </a>
+                </div>
+                <div
+                    class="p-8 bg-brand-light rounded-3xl border border-slate-100 hover:border-brand-blue/30 transition-all group">
+                    <h4 class="font-black text-slate-900 mb-3 group-hover:text-brand-blue">Apprenticeship India</h4>
+                    <p class="text-xs text-slate-500 font-medium mb-6">Explore on-the-job training opportunities in
+                        various sectors.</p>
+                    <a href="https://www.apprenticeshipindia.gov.in/" target="_blank"
+                        class="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center">
+                        Visit Official Site <i class="fas fa-external-link-alt ml-2"></i>
+                    </a>
+                </div>
+                <div
+                    class="p-8 bg-brand-light rounded-3xl border border-slate-100 hover:border-brand-blue/30 transition-all group">
+                    <h4 class="font-black text-slate-900 mb-3 group-hover:text-brand-blue">NSDC Digital</h4>
+                    <p class="text-xs text-slate-500 font-medium mb-6">Market-led skill development and financial
+                        support.</p>
+                    <a href="https://nsdcindia.org/" target="_blank"
+                        class="text-[10px] font-black text-brand-blue uppercase tracking-widest flex items-center">
+                        Visit Official Site <i class="fas fa-external-link-alt ml-2"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div
+                class="mt-12 p-8 bg-slate-900 text-white rounded-[3rem] flex flex-col md:flex-row items-center justify-between shadow-2xl shadow-blue-900/40">
+                <div class="mb-6 md:mb-0">
+                    <h3 class="text-2xl font-black mb-2">Check Your Eligibility for 500+ Schemes</h3>
+                    <p class="text-slate-400 font-medium text-sm">AI will analyze your profile and match you with
+                        benefits.</p>
+                </div>
+                <a href="signup.html"
+                    class="px-10 py-5 bg-brand-green text-white rounded-2xl font-black text-lg hover:scale-[1.05] transition-all">Check
+                    Now Free</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Learning & Internships -->
+    <section id="learning" class="py-24 bg-slate-900 text-white relative overflow-hidden">
+        <div
+            class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20">
+        </div>
+        <div class="container mx-auto px-6 relative z-10">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <div class="lg:w-1/2">
+                    <h2 class="text-4xl lg:text-5xl font-black mb-8">Not Just Recommendations. <br><span
+                            class="text-brand-green">Real Learning Paths.</span></h2>
+                    <p class="text-lg text-slate-400 font-medium mb-10 leading-relaxed">Access the world's best learning
+                        platforms and government internal training programs. From free certifications to paid
+                        internships, we bridge the gap between learning and earning.</p>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700">
+                            <h4 class="font-bold mb-2">Free Courses</h4>
+                            <p class="text-xs text-slate-500">From Google, Microsoft & SWAYAM.</p>
+                        </div>
+                        <div class="p-6 bg-slate-800 rounded-2xl border border-slate-700">
+                            <h4 class="font-bold mb-2">Internships</h4>
+                            <p class="text-xs text-slate-500">AI-matched role placements.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="lg:w-1/2">
+                    <div class="glass-card bg-white/5 p-8 rounded-[3rem] border border-white/10">
+                        <div class="flex items-center justify-between mb-8">
+                            <h3 class="font-black uppercase tracking-widest text-xs text-slate-500">AI Roadmap Preview
+                            </h3>
+                            <span
+                                class="text-[10px] bg-brand-green/20 text-brand-green px-3 py-1 rounded-full font-black italic">Active</span>
+                        </div>
+                        <div class="space-y-6">
+                            <div class="flex items-center space-x-4">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-brand-blue flex items-center justify-center text-[10px] font-black italic">
+                                    01</div>
+                                <div class="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand-blue w-full"></div>
+                                </div>
+                                <span class="text-[10px] font-black">Foundation</span>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-black italic text-slate-400">
+                                    02</div>
+                                <div class="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                    <div class="h-full bg-brand-green w-3/4 animate-pulse"></div>
+                                </div>
+                                <span class="text-[10px] font-black text-slate-400">Core Skills</span>
+                            </div>
+                            <div class="flex items-center space-x-4 opacity-30">
+                                <div
+                                    class="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-[10px] font-black italic text-slate-400">
+                                    03</div>
+                                <div class="flex-1 h-2 bg-slate-700 rounded-full"></div>
+                                <span class="text-[10px] font-black text-slate-400">Placement</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impact & Metrics -->
+    <section id="impact" class="py-24 bg-brand-light">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
+                <div>
+                    <div class="text-4xl lg:text-6xl font-black text-brand-blue mb-2" id="stat-users">0</div>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest">Users Guided</p>
+                </div>
+                <div>
+                    <div class="text-4xl lg:text-6xl font-black text-brand-green mb-2" id="stat-jobs">0</div>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest">Active Jobs</p>
+                </div>
+                <div>
+                    <div class="text-4xl lg:text-6xl font-black text-slate-900 mb-2" id="stat-hired">0</div>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest">Candidates Hired</p>
+                </div>
+                <div>
+                    <div class="text-4xl lg:text-6xl font-black text-brand-blue mb-2" id="stat-impact">0%</div>
+                    <p class="text-xs font-black uppercase text-slate-400 tracking-widest">Platform Trust</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-brand-dark text-white pt-20 pb-10">
+        <div class="container mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-12 mb-20">
+                <div class="col-span-1 md:col-span-2 space-y-6">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-brand-blue rounded-lg flex items-center justify-center text-white">
+                            <i class="fas fa-bridge text-sm"></i>
+                        </div>
+                        <span class="text-xl font-bold">CareerBridge<span class="text-brand-blue">AI</span></span>
+                    </div>
+                    <p class="text-slate-400 font-medium max-w-sm">Bharat's unified ecosystem for skills, employment,
+                        and government support. Powered by advanced AI to bridge the future of work.</p>
+                    <div class="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                        <p class="text-[10px] font-black text-red-400 uppercase tracking-widest mb-2"><i
+                                class="fas fa-exclamation-triangle mr-2"></i> Warning</p>
+                        <p class="text-xs text-red-200/60 font-medium italic">"CareerBridge-AI does not collect money
+                            for government schemes or job placements. Always verify via official government portals."
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-black mb-6 uppercase tracking-widest text-slate-500 text-xs">Resources</h4>
+                    <ul class="space-y-4 text-sm font-bold">
+                        <li><a href="https://www.india.gov.in/"
+                                class="text-slate-300 hover:text-white transition-colors">National Portal of India</a>
+                        </li>
+                        <li><a href="https://www.ncs.gov.in/"
+                                class="text-slate-300 hover:text-white transition-colors">National Career Service</a>
+                        </li>
+                        <li><a href="#" class="text-slate-300 hover:text-white transition-colors">Privacy Policy</a>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-black mb-6 uppercase tracking-widest text-slate-500 text-xs">Company</h4>
+                    <ul class="space-y-4 text-sm font-bold">
+                        <li><a href="#" class="text-slate-300 hover:text-white transition-colors">About Us</a></li>
+                        <li><a href="#" class="text-slate-300 hover:text-white transition-colors">Contact Support</a>
+                        </li>
+                        <li><a href="#" class="text-slate-300 hover:text-white transition-colors">AI Ethics</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div
+                class="border-t border-slate-800 pt-10 text-center flex flex-col md:flex-row justify-between items-center gap-6">
+                <p class="text-slate-500 text-sm font-bold">© 2026 CareerBridge-AI. All rights reserved.</p>
+                <div class="flex space-x-6 text-slate-500">
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-linkedin"></i></a>
+                    <a href="#" class="hover:text-white transition-colors"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Load Impact Metrics
+        async function loadStats() {
+            try {
+                const res = await fetch('http://localhost:5000/api/public/stats');
+                const data = await res.json();
+
+                animateValue("stat-users", 0, data.usersGuided, 2000);
+                animateValue("stat-jobs", 0, data.jobsPosted, 2000);
+                animateValue("stat-hired", 0, data.candidatesHired, 2000);
+                document.getElementById('stat-impact').innerText = data.impactScore;
+            } catch (err) {
+                console.error("Error loading public stats");
+            }
+        }
+
+        function animateValue(id, start, end, duration) {
+            const obj = document.getElementById(id);
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start).toLocaleString();
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+
+            // GSAP Animations
+            gsap.registerPlugin(ScrollTrigger);
+
+            gsap.from(".hero-title", {
+                duration: 1.5,
+                y: 100,
+                opacity: 0,
+                ease: "power4.out",
+                stagger: 0.2
+            });
+
+            gsap.from(".hero-gradient p", {
+                duration: 1.2,
+                y: 50,
+                opacity: 0,
+                delay: 0.5,
+                ease: "power3.out"
+            });
+
+            gsap.from(".group a", {
+                duration: 1,
+                scale: 0.8,
+                opacity: 0,
+                stagger: 0.1,
+                delay: 0.8,
+                ease: "back.out(1.7)"
+            });
+
+            // ScrollReveal Sections
+            gsap.utils.toArray('section').forEach(section => {
+                gsap.from(section.querySelectorAll('.container > *'), {
+                    scrollTrigger: {
+                        trigger: section,
+                        start: "top 80%",
+                        toggleActions: "play none none none"
+                    },
+                    y: 60,
+                    opacity: 0,
+                    duration: 1,
+                    stagger: 0.2,
+                    ease: "power2.out"
+                });
+            });
+
+            // Language Toggle Helper (Simplified for POC)
+            const token = localStorage.getItem('token');
+            const userRole = localStorage.getItem('userRole');
+            const authBtn = document.getElementById('auth-buttons');
+
+            if (token && authBtn) {
+                const target = userRole === 'admin' ? 'admin.html' : (userRole === 'employer' ? 'employer.html' : 'dashboard.html');
+                authBtn.innerHTML = `
+                    <a href="${target}" class="bg-brand-blue text-white px-8 py-3 rounded-full font-black text-sm shadow-xl hover:scale-105 transition-all">My Dashboard</a>
+                    <button onclick="logout()" class="text-sm font-bold text-slate-500 hover:text-red-500 ml-4">Logout</button>
+                `;
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            window.location.reload();
+        }
+    </script>
+
+</body>
+
+</html>
