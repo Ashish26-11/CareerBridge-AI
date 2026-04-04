@@ -113,6 +113,12 @@
                     </optgroup>
                     <optgroup label="📊 Business Roles">
                         <option value="Marketing Manager">Marketing Manager</option>
+                        <option value="Digital Marketing">Digital Marketing</option>
+                        <option value="Retail Sales">Retail / Sales Executive</option>
+                    </optgroup>
+                    <optgroup label="🔧 Skilled Trades (ITI)">
+                        <option value="Electrician">Electrician (ITI Trade)</option>
+                        <option value="Plumber">Plumber (ITI Trade)</option>
                     </optgroup>
                 </select>
                 <button onclick="startInterview()"
@@ -174,6 +180,7 @@
                     class="bg-white text-brand-blue font-black px-8 py-4 rounded-2xl shadow-sm border border-brand-blue/10 hidden">
                     Analyze & Next <i class="fas fa-chevron-right ml-2"></i>
                 </button>
+                <div id="live-feedback" class="hidden mt-4"></div>
             </div>
         </div>
 
@@ -217,6 +224,8 @@
     </div>
 
     <script>
+        const API_BASE = 'http://localhost:5000';
+        const ML_BASE = '${ML_BASE}';
         const token = localStorage.getItem('token');
         if (!token) window.location.href = 'login.html';
 
@@ -276,6 +285,34 @@
                 "How do you handle conflicting feedback from different stakeholders?",
                 "How do you balance aesthetics with accessibility in your designs?",
                 "Tell me about a UX problem you solved that had measurable business impact."
+            ],
+            "Electrician": [
+                "Describe a complex electrical wiring job you completed. What safety precautions did you take?",
+                "How do you troubleshoot a circuit breaker that keeps tripping?",
+                "What is the difference between single-phase and three-phase power? When is each used?",
+                "How do you read and interpret electrical wiring diagrams?",
+                "Describe a time you identified a dangerous electrical fault before it caused an accident."
+            ],
+            "Plumber": [
+                "Walk me through how you would diagnose and fix a persistent pipe leak.",
+                "What steps do you take to unclog a severely blocked drain?",
+                "How do you ensure water pressure is correctly balanced in a multi-floor building?",
+                "Describe a challenging plumbing installation job and how you handled unexpected problems.",
+                "What safety regulations do you follow when working with gas pipelines?"
+            ],
+            "Digital Marketing": [
+                "How would you create a 90-day digital marketing plan for a new Indian startup with ₹50,000 budget?",
+                "Explain how you would improve a website's SEO ranking from page 3 to page 1 on Google.",
+                "Describe a social media campaign you ran — what was the ROI and what did you learn?",
+                "How do you measure the success of a Facebook Ads campaign beyond just clicks?",
+                "Tell me about a time a campaign completely underperformed — what did you do?"
+            ],
+            "Retail Sales": [
+                "How do you handle a customer who is comparing your product with a cheaper competitor?",
+                "Describe your approach to upselling and cross-selling without making the customer feel pressured.",
+                "Tell me about the biggest sale you closed. What was your strategy?",
+                "How do you maintain sales targets during a slow season?",
+                "Describe how you build long-term relationships with customers for repeat business."
             ]
         };
 
@@ -304,7 +341,7 @@
             // Pehle Gemini se dynamic questions try karo
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch('http://localhost:5000/api/users/interview/generate-questions', {
+                const res = await fetch(`${API_BASE}/api/users/interview/generate-questions`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -436,7 +473,7 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch('http://localhost:5000/api/users/interview/evaluate', {
+                const res = await fetch(`${API_BASE}/api/users/interview/evaluate`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -448,10 +485,36 @@
                 const data = await res.json();
                 interviewData.push(data);
 
+                // Show live per-question feedback
+                const feedbackEl = document.getElementById('live-feedback');
+                if (feedbackEl) {
+                    const scoreColor = data.score >= 70 ? '#10b981' : data.score >= 45 ? '#f59e0b' : '#ef4444';
+                    feedbackEl.innerHTML = `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid ${scoreColor};
+                                    border-radius: 12px; padding: 16px; margin-top: 12px; animation: fadeIn 0.4s ease;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="font-size: 12px; font-weight: 800; text-transform: uppercase;
+                                             color: #64748b; letter-spacing: 1px;">Question ${currentIndex + 1} Feedback</span>
+                                <span style="font-size: 22px; font-weight: 900; color: ${scoreColor};">${data.score}/100</span>
+                            </div>
+                            <p style="font-size: 13px; color: #374151; margin: 0 0 8px 0;">${data.feedback}</p>
+                            ${data.improvement_areas && data.improvement_areas.length > 0 ? `
+                                <div style="font-size: 11px; color: #64748b;">
+                                    <strong>Improve:</strong> ${data.improvement_areas.join(', ')}
+                                </div>` : ''}
+                        </div>`;
+                    feedbackEl.classList.remove('hidden');
+                }
+
                 currentIndex++;
-                btn.innerHTML = 'Analyze & Next <i class="fas fa-chevron-right ml-2"></i>';
+                btn.innerHTML = 'Next Question <i class="fas fa-chevron-right ml-2"></i>';
                 btn.disabled = false;
-                showQuestion();
+
+                // Auto-advance after 2.5s or let user click
+                setTimeout(() => {
+                    if (feedbackEl) feedbackEl.classList.add('hidden');
+                    showQuestion();
+                }, 3000);
 
             } catch (e) {
                 alert("Evaluation failed. Proceeding to next.");

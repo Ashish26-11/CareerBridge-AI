@@ -11,7 +11,7 @@ const isConsultant = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         if (user && user.role === 'consultant') {
@@ -21,7 +21,7 @@ const isConsultant = async (req, res, next) => {
             res.status(403).json({ message: 'Access denied: Consultants only' });
         }
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : 'Invalid token' });
     }
 };
 
@@ -30,13 +30,21 @@ router.post('/onboard', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const { expertise, experience, languages, fee, bio } = req.body;
 
         let consultant = await Consultant.findOne({ userId: decoded.id });
         if (consultant) {
-            return res.status(400).json({ message: 'Already onboarded as a consultant' });
+            // Update existing profile (UPSERT)
+            consultant.expertise = expertise;
+            consultant.experience = experience;
+            consultant.fee = fee;
+            consultant.languages = languages;
+            consultant.bio = bio;
+            // We keep the status existing (approved stays approved, pending stays pending)
+            await consultant.save();
+            return res.status(200).json({ message: 'Professional profile updated successfully', consultant });
         }
 
         consultant = new Consultant({
@@ -56,7 +64,7 @@ router.post('/onboard', async (req, res) => {
 
         res.status(201).json({ message: 'Consultant profile sent for approval', consultant });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -66,7 +74,7 @@ router.get('/profile', isConsultant, async (req, res) => {
         const consultant = await Consultant.findOne({ userId: req.user._id });
         res.json(consultant);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -100,7 +108,7 @@ router.get('/dashboard-stats', isConsultant, async (req, res) => {
             rating: consultant.rating
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -113,7 +121,7 @@ router.get('/sessions', isConsultant, async (req, res) => {
             .sort({ 'slot.startTime': 1 });
         res.json(sessions);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -125,7 +133,7 @@ router.post('/sessions/:id/start', isConsultant, async (req, res) => {
         }, { new: true });
         res.json({ message: 'Session started successfully', session });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -178,7 +186,7 @@ router.get('/:id/availability', async (req, res) => {
         if (!consultant) return res.status(404).json({ message: 'Consultant not found' });
         res.json(consultant.availability || []);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -193,7 +201,7 @@ router.post('/availability', isConsultant, async (req, res) => {
         );
         res.json({ message: 'Availability updated successfully', availability: consultant.availability });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 

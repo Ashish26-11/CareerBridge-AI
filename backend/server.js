@@ -65,6 +65,7 @@ const employabilityRoutes = require('./routes/employability');
 const riskRoutes = require('./routes/riskRoutes'); // ✅ Added here with other imports
 const simulationRoutes = require('./routes/simulationRoutes');
 const resumeRoutes = require('./routes/resumeRoutes');
+const networkRoutes = require('./routes/network');
 
 // Use All Routes
 app.use('/api/schemes', schemeRoutes);
@@ -78,6 +79,7 @@ app.use('/api/employability', employabilityRoutes);
 app.use('/api/risk', riskRoutes); // ✅ Moved here with other routes
 app.use('/api/simulation', simulationRoutes);
 app.use('/api/resume', resumeRoutes);
+app.use('/api/network', networkRoutes);
 
 // Socket.io Integration
 const server = require('http').createServer(app);

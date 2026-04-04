@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Razorpay = require('razorpay');
+const careerSimulator = require('../services/careerSimulator');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder',
@@ -13,11 +14,11 @@ const razorpay = new Razorpay({
 // Signup
 router.post('/signup', async (req, res) => {
     try {
-        const { name, email, password, role, companyName, website, gst, consultantData } = req.body;
+        const { name, email, password, role, companyName, website, gst, consultantData, userTrack } = req.body;
         const exists = await User.findOne({ email });
         if (exists) return res.status(400).json({ message: 'User already exists' });
 
-        const userData = { name, email, password, role: role || 'user' };
+        const userData = { name, email, password, role: role || 'user', userTrack: userTrack || 'tech' };
         if (role === 'employer') {
             userData.company = {
                 name: companyName,
@@ -45,10 +46,10 @@ router.post('/signup', async (req, res) => {
             await consultant.save();
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret_key', { expiresIn: '1d' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })(), { expiresIn: '1d' });
         res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -61,10 +62,10 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret_key', { expiresIn: '1d' });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })(), { expiresIn: '1d' });
         res.json({ token, user: { id: user._id, name: user.name, email: user.email, role: user.role } });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -73,7 +74,7 @@ router.get('/recommendations', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const user = await User.findById(decoded.id);
         const Career = require('../models/Career');
@@ -117,7 +118,7 @@ router.get('/recommendations', async (req, res) => {
 
         res.json(matches);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -126,36 +127,70 @@ router.post('/simulate', async (req, res) => {
     try {
         const { careerId, year } = req.body;
         const Career = require('../models/Career');
-        const career = await Career.findById(careerId);
         const axios = require('axios');
 
-        let projectedSalary = 25000;
-        if (career) {
-            try {
-                const ml_res = await axios.post(`${ML_URL}/simulate`, {
-                    experience: 1.0, // Default for now
-                    career: career.title
-                });
-                const yearIndex = Math.min(parseInt(year), 10);
-                const projection = ml_res.data.ten_year_projection[yearIndex];
-
+        // Handle Non-Tech Simulation (Custom Logic)
+        if (typeof careerId === 'string' && careerId.startsWith('non-tech-')) {
+            const trade = careerId.replace('non-tech-', '');
+            const salaryData = careerSimulator.getSalaryData();
+            const tradeData = salaryData[Object.keys(salaryData).find(k => k.toLowerCase() === trade.toLowerCase())];
+            
+            if (tradeData) {
+                const baseEntry = parseInt(tradeData.entry.split('-')[0]);
+                const growth = 1.15; // 15% annual growth for non-tech
+                const projected = Math.floor(baseEntry * 100000 * Math.pow(growth, year));
+                
                 return res.json({
-                    year: projection.year,
-                    projectedSalary: `₹${projection.estimated_salary.toLocaleString()}`,
-                    marketStability: projection.stability_index > 80 ? 'High' : 'Moderate',
-                    riskLevel: projection.stability_index < 50 ? 'High' : 'Low'
+                    year,
+                    projectedSalary: `₹${projected.toLocaleString()}`,
+                    marketStability: 'High',
+                    riskLevel: 'Low'
                 });
-            } catch (ml_err) {
-                console.error("ML Service Error (Simulate):", ml_err.message);
             }
         }
 
-        const multiplier = Math.pow(1.10, parseInt(year));
+        const career = await Career.findById(careerId);
+        
+        // Fallback: use careerSimulator salary data for accurate estimates
+        const careerSimulator = require('../services/careerSimulator');
+        const salaryData = careerSimulator.getSalaryData();
+
+        // Try to match career title to salary data
+        const careerTitle = career ? career.title : '';
+        let matchedData = null;
+        if (careerTitle) {
+            const key = Object.keys(salaryData).find(k =>
+                k.toLowerCase() === careerTitle.toLowerCase() ||
+                careerTitle.toLowerCase().includes(k.toLowerCase())
+            );
+            if (key) matchedData = salaryData[key];
+        }
+
+        let baseMonthly;
+        if (matchedData) {
+            // Parse "X-Y LPA" format → take midpoint → convert to monthly
+            const parts = matchedData.entry.split('-');
+            const entryLPA = (parseFloat(parts[0]) + parseFloat(parts[1])) / 2;
+            baseMonthly = Math.floor((entryLPA * 100000) / 12);
+        } else {
+            baseMonthly = 25000; // true fallback only if no match
+        }
+
+        const growth = career?.title?.toLowerCase().includes('data') ||
+                       career?.title?.toLowerCase().includes('machine') ? 1.18 :
+                       career?.title?.toLowerCase().includes('developer') ||
+                       career?.title?.toLowerCase().includes('engineer') ? 1.15 : 1.12;
+
+        const multiplier = Math.pow(growth, parseInt(year));
+        const projected = Math.floor(baseMonthly * multiplier);
+        const stability = projected > 80000 ? 'High' : projected > 50000 ? 'Moderate' : 'Low';
+
         res.json({
-            year,
-            projectedSalary: `₹${Math.floor(projectedSalary * multiplier).toLocaleString()}`,
-            marketStability: year > 3 ? 'High' : 'Moderate',
-            riskLevel: 'Low'
+            year: parseInt(year),
+            projectedSalary: `₹${projected.toLocaleString()}`,
+            marketStability: stability,
+            riskLevel: projected > 80000 ? 'Low' : 'Moderate',
+            note: 'fallback'
         });
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -168,11 +203,11 @@ router.get('/me', async (req, res) => {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id).select('-password');
         res.json(user);
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : 'Invalid token' });
     }
 });
 
@@ -182,7 +217,7 @@ router.put('/profile', async (req, res) => {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const updates = req.body;
 
         // Enhanced AI Simulation
@@ -194,7 +229,7 @@ router.put('/profile', async (req, res) => {
         const user = await User.findByIdAndUpdate(decoded.id, updates, { new: true }).select('-password');
         res.json(user);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -203,7 +238,7 @@ router.post('/select-path', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const { careerId, title } = req.body;
         const user = await User.findByIdAndUpdate(decoded.id, {
@@ -212,7 +247,7 @@ router.post('/select-path', async (req, res) => {
 
         res.json({ message: `Path ${title} selected successfully`, user });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -221,7 +256,7 @@ router.get('/risk-analysis', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
         const axios = require('axios');
         const ML_URL = process.env.ML_URL || 'http://localhost:8000';
@@ -267,7 +302,7 @@ router.get('/risk-analysis', async (req, res) => {
             mitigation: mitigation.length > 0 ? mitigation : ["Continue learning", "Update profile weekly"]
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -279,7 +314,7 @@ router.get('/roadmap/:careerId', async (req, res) => {
         if (!career) return res.status(404).json({ message: 'Career not found' });
         res.json(career.roadmap);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -288,7 +323,7 @@ router.get('/external-opportunities', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         const axios = require('axios');
@@ -305,7 +340,7 @@ router.get('/external-opportunities', async (req, res) => {
             res.json([]);
         }
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -317,7 +352,7 @@ router.post('/apply/:jobId', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const user = await User.findById(decoded.id);
         const job = await Job.findById(req.params.jobId);
@@ -344,7 +379,7 @@ router.post('/apply/:jobId', async (req, res) => {
 
         res.status(201).json({ message: 'Application submitted successfully' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -353,7 +388,7 @@ router.get('/my-applications', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const applications = await Application.find({ userId: decoded.id })
             .populate('jobId', 'title company location status')
@@ -361,7 +396,7 @@ router.get('/my-applications', async (req, res) => {
 
         res.json(applications);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -387,7 +422,7 @@ router.get('/consultants/list', async (req, res) => {
         const consultants = await Consultant.find(query).populate('userId', 'name email location');
         res.json(consultants);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -396,7 +431,7 @@ router.post('/book-session', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const { consultantId, startTime, mode, duration, amount } = req.body;
 
@@ -420,28 +455,48 @@ router.post('/book-session', async (req, res) => {
             receipt: "order_rcptid_" + Math.floor(Date.now() / 1000)
         };
 
-        const order = await razorpay.orders.create(options);
-
-        // Pre-save session as pending payment
+        const Session = require('../models/Session');
         const session = new Session({
             userId: decoded.id,
             consultantId,
             slot: { startTime, duration: duration || 45 },
             mode,
             status: 'pending-payment',
-            razorpayOrderId: order.id,
             amount
         });
-        await session.save();
 
-        res.status(201).json({
-            orderId: order.id,
-            amount: order.amount,
-            currency: order.currency,
-            keyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_placeholder'
+        let orderId, amount_val, currency_val, keyId_val;
+        try {
+            const order = await razorpay.orders.create(options);
+            orderId = order.id;
+            amount_val = order.amount;
+            currency_val = order.currency;
+            keyId_val = process.env.RAZORPAY_KEY_ID;
+            
+            session.razorpayOrderId = orderId;
+            await session.save();
+        } catch (rzpErr) {
+            // Demo fallback — skip payment, book directly
+            console.warn('Razorpay unavailable, using demo booking:', rzpErr.message);
+            session.status = 'scheduled';
+            session.razorpayOrderId = 'DEMO-' + Date.now();
+            await session.save();
+            return res.json({
+                skipPayment: true,
+                sessionId: session._id,
+                message: 'Session booked successfully (Demo Mode — payment skipped)'
+            });
+        }
+
+        return res.json({
+            orderId,
+            amount: amount_val,
+            currency: currency_val,
+            keyId: keyId_val,
+            sessionId: session._id
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -481,7 +536,7 @@ router.post('/verify-payment', async (req, res) => {
             res.status(400).json({ message: 'Invalid signature' });
         }
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -491,7 +546,7 @@ router.get('/my-sessions', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const sessions = await Session.find({ userId: decoded.id })
             .populate({
@@ -501,7 +556,7 @@ router.get('/my-sessions', async (req, res) => {
             .sort({ 'slot.startTime': -1 });
         res.json(sessions);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -520,38 +575,77 @@ router.post('/emotion-check', async (req, res) => {
     }
 });
 
-// AI Interview Evaluation
+// --- AI ASSISTANT CHAT (Gemini API Fallback) ---
+router.post('/chat', async (req, res) => {
+    try {
+        const { message, userContext } = req.body;
+        if (!process.env.GEMINI_API_KEY) return res.json({ reply: "API Key not configured. Ask me about resumes or skill gaps!" });
+
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `
+            User Message: "${message}"
+            User Context: ${JSON.stringify(userContext || {})}
+            You are "CareerBridge-AI", a professional assistant for Indian students and job seekers. 
+            Provide career advice, resume tips, or skill guidance. 
+            Respond in a premium, helpful tone using a mix of English and Hindi (Hinglish).
+            Keep it concise (2-3 sentences). Mention Skill India Digital or NPTEL if relevant.
+        `;
+
+        const result = await model.generateContent(prompt);
+        res.json({ reply: result.response.text() });
+    } catch (err) {
+        res.status(500).json({ reply: "Main abhi thoda busy hoon. Aap questions, skill gap ya resume ke baare mein puchiye!" });
+    }
+});
+
+// AI Interview Evaluation with Gemini Fallback
 router.post('/interview/evaluate', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_placeholder');
 
         const { role, question, answer } = req.body;
         const axios = require('axios');
         const ML_URL = process.env.ML_URL || 'http://localhost:8000';
 
-        const ml_res = await axios.post(`${ML_URL}/evaluate-interview-answer`, {
-            role,
-            question,
-            answer
-        });
+        let result;
+        try {
+            // Priority 1: ML FastAPI Service
+            const ml_res = await axios.post(`${ML_URL}/evaluate-interview-answer`, { role, question, answer });
+            result = ml_res.data;
+        } catch (ml_err) {
+            // Priority 2: Gemini API Fallback
+            console.log("ML Evaluation failed, falling back to Gemini...");
+            const { GoogleGenerativeAI } = require('@google/generative-ai');
+            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        // Log performance for the user (optional but recommended for persistent tracking)
+            const evalPrompt = `
+                Role: ${role} | Question: ${question} | Candidate Answer: ${answer}
+                Evaluate the answer for an Indian job interview. Provide:
+                1. Score (0-100)
+                2. Constructive feedback (Concise)
+                3. List of 2 improvement areas.
+                Return ONLY valid JSON: {"score": 80, "feedback": "...", "improvement_areas": ["...", "..."]}
+            `;
+            const geminiRes = await model.generateContent(evalPrompt);
+            const text = geminiRes.response.text();
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            result = jsonMatch ? JSON.parse(jsonMatch[0]) : { score: 50, feedback: "Good effort! Try to be more descriptive.", improvement_areas: ["Technical depth", "Confidence"] };
+        }
+
         const user = await User.findById(decoded.id);
         if (user) {
             if (!user.interviewHistory) user.interviewHistory = [];
-            user.interviewHistory.push({
-                role,
-                question,
-                score: ml_res.data.score,
-                feedback: ml_res.data.feedback,
-                date: new Date()
-            });
+            user.interviewHistory.push({ role, question, score: result.score, feedback: result.feedback, date: new Date() });
             await user.save();
         }
 
-        res.json(ml_res.data);
+        res.json(result);
     } catch (err) {
         console.error("Interview Evaluation Error:", err.message);
         res.status(500).json({ message: 'Evaluation failed' });
@@ -563,7 +657,7 @@ router.post('/interview/generate-questions', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         const { career, difficulty } = req.body;
@@ -575,17 +669,22 @@ router.post('/interview/generate-questions', async (req, res) => {
         const userEdu = user?.education?.qualification || 'Graduate';
 
         const prompt = `
-Generate exactly 5 interview questions for a ${career} role in India (2025 job market).
+Generate exactly 5 interview questions for a ${career} role in India (2025-26 job market).
 Candidate profile: Skills: ${userSkills} | Education: ${userEdu} | Difficulty: ${difficulty || 'Medium'}
 
-Mix of behavioral and technical. Keep Indian company context (TCS, Infosys, startups etc).
-Return ONLY a valid JSON array, no markdown, no explanation:
+Structure:
+1. One 'Tell me about yourself' for ${career}.
+2. Two technical questions specific to ${career}.
+3. One situational/behavioral question (e.g., handling failure or conflict).
+4. One growth-mindset question.
+
+Return ONLY a valid JSON array, no markdown:
 [
-  {"id":1,"question":"...","type":"behavioral","hint":"key points to cover in answer"},
+  {"id":1,"question":"...","type":"behavioral","hint":"..."},
   {"id":2,"question":"...","type":"technical","hint":"..."},
-  {"id":3,"question":"...","type":"situational","hint":"..."},
-  {"id":4,"question":"...","type":"technical","hint":"..."},
-  {"id":5,"question":"...","type":"behavioral","hint":"..."}
+  {"id":3,"question":"...","type":"technical","hint":"..."},
+  {"id":4,"question":"...","type":"situational","hint":"..."},
+  {"id":5,"question":"...","type":"mindset","hint":"..."}
 ]`;
 
         const result = await model.generateContent(prompt);
@@ -605,7 +704,7 @@ router.post('/roadmap/generate', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         const { career } = req.body;
@@ -653,7 +752,36 @@ Return ONLY a valid JSON array, no markdown, no extra text:
         res.json({ roadmap, career });
     } catch (err) {
         console.error('Roadmap Generation Error:', err.message);
-        res.status(500).json({ message: 'Roadmap generation failed', error: err.message });
+        const fallbackRoadmap = [
+            {
+                "phase": "Phase 1: Foundation",
+                "duration": "Month 1",
+                "skills": ["Basic Concepts", "Industry Overview"],
+                "milestone": "Identify core interests",
+                "resources": [
+                    { "title": "Introduction to Career", "link": "https://swayam.gov.in", "platform": "SWAYAM", "isFree": true }
+                ]
+            },
+            {
+                "phase": "Phase 2: Skill Acquisition",
+                "duration": "Month 2-4",
+                "skills": ["Core Technical Skills", "Tool Basics"],
+                "milestone": "Build foundational projects",
+                "resources": [
+                    { "title": "Core Technical Course", "link": "https://nptel.ac.in", "platform": "NPTEL", "isFree": true }
+                ]
+            },
+            {
+                "phase": "Phase 3: Advanced Training",
+                "duration": "Month 5-6",
+                "skills": ["Advanced Concepts", "Portfolio Building"],
+                "milestone": "Complete professional portfolio",
+                "resources": [
+                    { "title": "Professional Specialization", "link": "https://kaggle.com/learn", "platform": "Kaggle", "isFree": true }
+                ]
+            }
+        ];
+        res.json({ roadmap: fallbackRoadmap, career, fallback: true });
     }
 });
 

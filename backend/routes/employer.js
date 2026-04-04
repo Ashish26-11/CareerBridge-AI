@@ -11,7 +11,7 @@ const isEmployer = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         if (user && user.role === 'employer') {
@@ -21,7 +21,7 @@ const isEmployer = async (req, res, next) => {
             res.status(403).json({ message: 'Employer access denied' });
         }
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : 'Invalid token' });
     }
 };
 
@@ -39,7 +39,7 @@ router.post('/jobs', isEmployer, async (req, res) => {
         const savedJob = await job.save();
         res.status(201).json(savedJob);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -49,7 +49,7 @@ router.get('/my-jobs', isEmployer, async (req, res) => {
         const jobs = await Job.find({ employerId: req.user._id }).sort({ createdAt: -1 });
         res.json(jobs);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -64,7 +64,7 @@ router.put('/jobs/:id', isEmployer, async (req, res) => {
         if (!job) return res.status(404).json({ message: 'Job not found' });
         res.json(job);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -75,7 +75,7 @@ router.delete('/jobs/:id', isEmployer, async (req, res) => {
         if (!job) return res.status(404).json({ message: 'Job not found or unauthorized' });
         res.json({ message: 'Job deleted successfully' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -121,7 +121,7 @@ router.get('/jobs/:id/applicants', isEmployer, async (req, res) => {
 
         res.json(rankedApplicants);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -144,7 +144,7 @@ router.put('/applications/:id/status', isEmployer, async (req, res) => {
 
         res.json(application);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -160,7 +160,7 @@ router.get('/hired-applicants', isEmployer, async (req, res) => {
             .sort({ updatedAt: -1 });
         res.json(hired);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -180,7 +180,7 @@ router.get('/stats', isEmployer, async (req, res) => {
             verificationStatus: req.user.company?.verified || false
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 

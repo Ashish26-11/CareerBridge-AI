@@ -9,7 +9,7 @@ const isAdmin = async (req, res, next) => {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const user = await User.findById(decoded.id);
 
         if (user && user.role === 'admin') {
@@ -19,7 +19,7 @@ const isAdmin = async (req, res, next) => {
             res.status(403).json({ message: 'Access denied: Admins only' });
         }
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : 'Invalid token' });
     }
 };
 
@@ -75,7 +75,7 @@ router.get('/stats', isAdmin, async (req, res) => {
             totalSchemes
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -90,7 +90,7 @@ router.put('/users/:id', isAdmin, async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, { new: true }).select('-password');
         res.json(updatedUser);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -99,7 +99,7 @@ router.delete('/users/:id', isAdmin, async (req, res) => {
         await User.findByIdAndDelete(req.params.id);
         res.json({ message: 'User deleted' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -137,7 +137,7 @@ router.put('/jobs/:id', isAdmin, async (req, res) => {
         const updatedJob = await Job.findByIdAndUpdate(req.params.id, req.body, { new: true });
         res.json(updatedJob);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -181,7 +181,7 @@ router.put('/employers/:id/verify', isAdmin, async (req, res) => {
         ).select('-password');
         res.json(employer);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -195,7 +195,7 @@ router.get('/placements', isAdmin, async (req, res) => {
             .sort({ updatedAt: -1 });
         res.json(placements);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -296,7 +296,7 @@ router.get('/consultants', isAdmin, async (req, res) => {
         const consultants = await Consultant.find().populate('userId', 'name email');
         res.json(consultants);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -305,7 +305,7 @@ router.get('/consultants/pending', isAdmin, async (req, res) => {
         const pending = await Consultant.find({ status: 'pending' }).populate('userId', 'name email');
         res.json(pending);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -321,7 +321,7 @@ router.put('/consultants/:id/verify', isAdmin, async (req, res) => {
 
         res.json({ message: `Consultant ${status}`, consultant });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -340,7 +340,7 @@ router.get('/consultants/analytics', isAdmin, async (req, res) => {
             commission: (revenue[0]?.total || 0) * 0.15 // 15% platform fee
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -390,7 +390,7 @@ router.get('/district-stats', isAdmin, async (req, res) => {
             }
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -399,12 +399,25 @@ router.get('/scheme-analytics', isAdmin, async (req, res) => {
     try {
         const schemes = await Scheme.find();
         
+        const User = require('../models/User');
+        const allUsers = await User.find({ 'appliedSchemes.0': { $exists: true } })
+            .select('appliedSchemes');
+
+        // Count real applicants per scheme
+        const realCounts = {};
+        allUsers.forEach(u => {
+            u.appliedSchemes.forEach(a => {
+                const sid = a.schemeId?.toString();
+                if (sid) realCounts[sid] = (realCounts[sid] || 0) + 1;
+            });
+        });
+
         let totalApplicants = 0;
         let totalConverted = 0;
         let totalDropOff = 0;
         
         const analyticsData = schemes.map(s => {
-            const applicantsCount = s.applicantsCount || 0;
+            const applicantsCount = (s.applicantsCount || 0) + (realCounts[s._id.toString()] || 0);
             const convertedCount = s.convertedCount || 0;
             const dropOffCount = s.dropOffCount || 0;
             
@@ -440,7 +453,7 @@ router.get('/scheme-analytics', isAdmin, async (req, res) => {
             }
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 

@@ -1,5 +1,5 @@
-node_modules/ 
-backend/node_modules/ 
-backend/.env 
-ml_service/__pycache__/ 
-*.log 
+**/node_modules/
+**/.env
+**/logs/
+**/__pycache__/
+**/*.pyc

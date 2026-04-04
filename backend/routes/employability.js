@@ -7,11 +7,11 @@ const authMiddleware = async (req, res, next) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         req.userId = decoded.id;
         next();
     } catch (err) {
-        res.status(401).json({ message: 'Invalid token' });
+        res.status(401).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : 'Invalid token' });
     }
 };
 
@@ -52,7 +52,7 @@ router.post('/score', authMiddleware, async (req, res) => {
             message: `Your Employability Score is ${total}/100 — ${level} level`
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -62,7 +62,7 @@ router.get('/score', authMiddleware, async (req, res) => {
         const user = await User.findById(req.userId).select('employabilityScore employabilityLevel skills education experience location careerReadiness');
         res.json({ score: user.employabilityScore || 0, level: user.employabilityLevel || 'Low' });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 

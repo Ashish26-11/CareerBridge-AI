@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
         }
 
         const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         const User = require('../models/User');
         const user = await User.findById(decoded.id);
 
@@ -35,7 +35,7 @@ router.get('/', async (req, res) => {
             res.json(schemes);
         }
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -67,7 +67,7 @@ router.get('/seed', async (req, res) => {
         const createdSchemes = await Scheme.insertMany(defaultSchemes);
         res.json(createdSchemes);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -78,7 +78,7 @@ router.post('/apply/:id', async (req, res) => {
         if (!token) return res.status(401).json({ message: 'No token' });
 
         const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         
         const User = require('../models/User');
         const user = await User.findById(decoded.id);
@@ -99,7 +99,7 @@ router.post('/apply/:id', async (req, res) => {
             res.status(400).json({ message: 'Already applied' });
         }
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -110,7 +110,7 @@ router.get('/my-applications', async (req, res) => {
         if (!token) return res.status(401).json({ message: 'No token' });
 
         const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
         
         const User = require('../models/User');
         const user = await User.findById(decoded.id).populate('appliedSchemes');
@@ -119,7 +119,7 @@ router.get('/my-applications', async (req, res) => {
         
         res.json(user.appliedSchemes || []);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 

@@ -71,6 +71,36 @@
             transform-style: preserve-3d;
             transform: perspective(1000px);
         }
+
+        /* Tooltip Styles */
+        .help-tooltip {
+            display: inline-flex;
+            width: 18px;
+            height: 18px;
+            background: #e2e8f0;
+            color: #64748b;
+            border-radius: 50%;
+            font-size: 10px;
+            align-items: center;
+            justify-content: center;
+            cursor: help;
+            margin-left: 4px;
+            vertical-align: middle;
+            transition: all 0.2s;
+            font-style: normal;
+        }
+        .help-tooltip:hover {
+            background: #2563eb;
+            color: white;
+        }
+        .skill-suggestion {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .skill-suggestion:hover {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
     </style>
 </head>
 
@@ -195,6 +225,11 @@
                 class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
                 <i class="fas fa-comment-dots w-5"></i><span>AI Assistant</span>
             </button>
+            <button onclick="showSection('passport')" id="nav-passport"
+                class="nav-item w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl">
+                <i class="fas fa-id-card w-5"></i><span>Skill Passport</span>
+                <span class="ml-auto px-2 py-0.5 bg-blue-100 text-blue-700 text-[8px] font-black rounded uppercase tracking-tighter">Bharat</span>
+            </button>
             <a href="interview-simulator.html"
                 class="w-full flex items-center space-x-3 p-3 text-slate-500 hover:bg-slate-50 rounded-xl transition-all hover:text-brand-blue">
                 <i class="fas fa-microphone-alt w-5"></i><span class="font-bold">AI Interview</span>
@@ -252,10 +287,13 @@
                     <p class="text-xs font-bold text-slate-400">Total Fee</p>
                     <p class="text-xl font-black text-brand-green" id="booking-fee">₹500</p>
                 </div>
-                <button onclick="confirmBooking()"
-                    class="bg-brand-blue text-white px-8 py-3 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">
-                    Pay & Book
-                </button>
+                <div class="flex flex-col items-end">
+                    <div id="booking-error-msg" class="hidden bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3"></div>
+                    <button onclick="confirmBooking()"
+                        class="bg-brand-blue text-white px-8 py-3 rounded-2xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                        Pay & Book
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -310,7 +348,7 @@
             </div>
 
             <!-- AI Interview Prompt Card -->
-            <div
+            <div id="overview-interview-card"
                 class="glass-card p-8 rounded-[2.5rem] mb-10 flex flex-col md:flex-row items-center justify-between border-2 border-brand-blue/5 relative overflow-hidden group">
                 <div
                     class="absolute top-0 right-0 w-32 h-32 bg-brand-blue/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform">
@@ -426,6 +464,13 @@
                         <p class="text-[10px] text-slate-400 italic">Zero Resume Mode: Link your portfolio or a
                             cloud-stored document for employer review.</p>
                     </div>
+
+                    <!-- Track-specific Skill Suggestions -->
+                    <div class="col-span-full mt-2">
+                        <label class="font-bold text-xs uppercase text-slate-400 block mb-2">Suggested Skills for Your Track</label>
+                        <div id="track-skill-suggestions" class="flex flex-wrap gap-2"></div>
+                    </div>
+
                     <div class="col-span-full">
                         <button type="submit"
                             class="w-full bg-brand-blue text-white font-black p-5 rounded-2xl shadow-xl shadow-blue-200 hover:scale-[1.01] transition-all">Update
@@ -763,9 +808,112 @@
                             <option>High</option>
                         </select>
                     </div>
+                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl">
+                        <div>
+                            <p class="font-bold">My Career Track</p>
+                            <p class="text-sm text-slate-500">Change your career track to see different content</p>
+                        </div>
+                        <select id="setting-user-track" onchange="updateTrack(this.value)" class="p-2 rounded-lg bg-white border border-slate-200 font-bold text-brand-blue">
+                            <option value="tech">IT & Software</option>
+                            <option value="non-tech">Trades & Skills</option>
+                            <option value="digital-business">Digital Business</option>
+                            <option value="agriculture">Modern Agriculture</option>
+                        </select>
+                    </div>
                     <button
                         class="w-full text-red-500 font-bold p-4 hover:bg-red-50 rounded-2xl transition-all">Deactivate
-                        AI Career Sync</button>
+                    AI Career Sync</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 12. Bharat Skill Passport -->
+        <section id="view-passport" class="section-view">
+            <div class="max-w-4xl mx-auto">
+                <div class="bg-gradient-to-br from-brand-blue to-indigo-900 rounded-[3rem] p-12 text-white shadow-2xl relative overflow-hidden mb-12" data-tilt>
+                    <!-- Background Decor -->
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                    <div class="absolute bottom-0 left-0 w-48 h-48 bg-brand-green/20 rounded-full -ml-10 -mb-10 blur-2xl"></div>
+
+                    <div class="relative z-10 flex flex-col md:flex-row gap-12 items-center">
+                        <!-- Passport Photo & QR -->
+                        <div class="flex flex-col items-center space-y-6">
+                            <div class="w-40 h-40 bg-white p-2 rounded-3xl shadow-xl">
+                                <img src="https://ui-avatars.com/api/?name=User&background=random&size=200" id="passport-img" class="w-full h-full object-cover rounded-2xl" alt="Passport Photo">
+                            </div>
+                            <div class="bg-white p-3 rounded-2xl shadow-lg">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=CareerBridgeAI-User" id="passport-qr" class="w-24 h-24" alt="QR Code">
+                                <p class="text-[8px] text-slate-400 font-bold text-center mt-2 uppercase tracking-widest">Verify Identity</p>
+                            </div>
+                        </div>
+
+                        <!-- Passport Details -->
+                        <div class="flex-1 space-y-8">
+                            <div class="border-b border-white/20 pb-6">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <img src="https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/1200px-Flag_of_India.svg.png" class="h-4 rounded-sm" alt="India Flag">
+                                    <span class="text-[10px] font-black uppercase tracking-[0.3em] opacity-60">Bharat Skill Passport</span>
+                                </div>
+                                <h2 class="text-4xl font-black tracking-tight" id="passport-name">USER NAME</h2>
+                                <p class="text-brand-green font-bold flex items-center space-x-2 mt-1">
+                                    <i class="fas fa-check-circle text-xs"></i>
+                                    <span>Verified Professional Identity</span>
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50 block mb-2">Primary Category</label>
+                                    <p class="font-bold text-lg" id="passport-role">Software Developer</p>
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-black uppercase tracking-widest opacity-50 block mb-2">Education</label>
+                                    <p class="font-bold text-lg" id="passport-edu">B.Tech Graduate</p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="text-[10px] font-black uppercase tracking-widest opacity-50 block mb-4">Verified Skills</label>
+                                <div class="flex flex-wrap gap-2" id="passport-skills">
+                                    <!-- Skills injected here -->
+                                </div>
+                            </div>
+
+                            <div class="pt-6 flex gap-4">
+                                <button onclick="window.print()" class="px-8 py-4 bg-white text-brand-blue font-black rounded-2xl shadow-xl hover:scale-105 transition-all text-sm">
+                                    <i class="fas fa-download mr-2"></i> Download Digital Copy
+                                </button>
+                                <button class="px-8 py-4 bg-brand-green text-white font-black rounded-2xl shadow-xl hover:scale-105 transition-all text-sm">
+                                    <i class="fas fa-share-alt mr-2"></i> Share with Employers
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Verified Badges -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-blue-50 text-brand-blue rounded-xl flex items-center justify-center text-xl"><i class="fas fa-shield-alt"></i></div>
+                        <div>
+                            <p class="font-bold text-slate-900">National Trust</p>
+                            <p class="text-xs text-slate-400 font-medium">Verified via DigiLocker</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-green-50 text-brand-green rounded-xl flex items-center justify-center text-xl"><i class="fas fa-certificate"></i></div>
+                        <div>
+                            <p class="font-bold text-slate-900">Skill Certified</p>
+                            <p class="text-xs text-slate-400 font-medium">NPTEL & SWAYAM Sync</p>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 flex items-center space-x-4">
+                        <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl"><i class="fas fa-qrcode"></i></div>
+                        <div>
+                            <p class="font-bold text-slate-900">Web3 Identity</p>
+                            <p class="text-xs text-slate-400 font-medium">Blockchain Secured Profile</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -773,6 +921,8 @@
     </main>
 
     <script>
+        const API_BASE = 'http://localhost:5000';
+        const ML_BASE = 'http://localhost:8000';
         const token = localStorage.getItem('token');
         const userRole = localStorage.getItem('userRole');
         if (!token) window.location.href = 'login.html';
@@ -802,11 +952,18 @@
 
         async function fetchUser() {
             try {
-                const res = await fetch('http://localhost:5000/api/users/me', {
+                const res = await fetch(`${API_BASE}/api/users/me`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 currentUser = await res.json();
                 renderUserInfo();
+
+                // BUG 1 FIX: Sync Selected Career to localStorage
+                if (currentUser.selectedCareer && currentUser.selectedCareer.title) {
+                    localStorage.setItem('selectedCareerId', currentUser.selectedCareer.careerId);
+                    localStorage.setItem('selectedCareerTitle', currentUser.selectedCareer.title);
+                    localStorage.setItem('selectedCareer', currentUser.selectedCareer.title);
+                }
 
                 // Entrance Animations
                 gsap.from("aside", { x: -50, opacity: 0, duration: 1, ease: "power4.out" });
@@ -888,6 +1045,79 @@
                 if (nextBtnEl) { nextBtnEl.innerText = 'Jobs Dekho'; nextBtnEl.onclick = () => showSection('jobs'); }
             }
             // ─────────────────────────────────────────────────────────────────
+
+            // Update Settings Track
+            if (document.getElementById('setting-user-track')) {
+                document.getElementById('setting-user-track').value = currentUser.userTrack || 'tech';
+            }
+
+            // Render Track Specific Tooltips and Skills
+            renderTrackSpecificUI();
+
+            // ── TRACK-BASED UI FILTERING ────────────────────────────────────────
+            const track = currentUser?.userTrack || 'tech';
+            const isTech = (track === 'tech' || track === 'digital-business');
+            const isNonTech = (track === 'non-tech' || track === 'agriculture');
+
+            // Nav items to hide for non-tech users
+            const techOnlyNavs = ['nav-learning', 'nav-employability'];
+            techOnlyNavs.forEach(navId => {
+                const el = document.getElementById(navId);
+                if (el) el.style.display = isNonTech ? 'none' : '';
+            });
+
+            // AI Interview nav — hide for non-tech
+            const sidebarInterview = document.querySelector('aside a[href="interview-simulator.html"]');
+            if (sidebarInterview) sidebarInterview.style.display = isNonTech ? 'none' : '';
+
+            // Profile field labels — change for non-tech
+            const streamInput = document.getElementById('prof-stream');
+            const goalsInput = document.getElementById('prof-goals');
+
+            if (isNonTech) {
+                if (streamInput) streamInput.placeholder = 'e.g. ITI Electrician, Tailoring Course';
+                if (goalsInput) goalsInput.placeholder = 'e.g. Apna Business, Master Technician';
+                // Show trade-friendly hint on Work Experience
+                const expInput = document.getElementById('prof-exp');
+                if (expInput) expInput.placeholder = 'Koi bhi kaam jo aapne kiya ho — khet, dukaan, ghar ka kaam bhi';
+            } else {
+                if (streamInput) streamInput.placeholder = 'e.g. Computer Science';
+                if (goalsInput) goalsInput.placeholder = 'e.g. SDE, Data Scientist';
+            }
+
+            const interviewCard = document.getElementById('overview-interview-card');
+            if (interviewCard) interviewCard.style.display = isNonTech ? 'none' : '';
+            // ────────────────────────────────────────────────────────────────────
+        }
+
+        function renderTrackSpecificUI() {
+            const track = currentUser.userTrack || 'tech';
+            const suggestionsEl = document.getElementById('track-skill-suggestions');
+            if (!suggestionsEl) return;
+
+            const skillsByTrack = {
+                'tech': ['React', 'Node.js', 'Python', 'AWS', 'Docker', 'System Design'],
+                'non-tech': ['Electrical Wiring', 'Plumbing', 'Carpentry', 'Tailoring', 'Welding', 'Automobile Repair'],
+                'digital-business': ['SEO', 'Google Ads', 'Content Strategy', 'Data Analytics', 'E-commerce Ops'],
+                'agriculture': ['Organic Farming', 'Hydroponics', 'Drip Irrigation', 'Soil Testing', 'Agri-Tech Tools']
+            };
+
+            const skills = skillsByTrack[track] || skillsByTrack['tech'];
+            suggestionsEl.innerHTML = skills.map(s => `
+                <span onclick="addSkillFromSuggestion('${s}')" class="skill-suggestion px-3 py-1 bg-blue-50 text-brand-blue border border-blue-100 rounded-full text-[10px] font-bold uppercase transition-all">
+                    + ${s}
+                </span>
+            `).join('');
+        }
+
+        function addSkillFromSuggestion(skill) {
+            const input = document.getElementById('prof-skills');
+            let currentSkills = input.value.split(',').map(s => s.trim()).filter(s => s !== "");
+            if (!currentSkills.includes(skill)) {
+                currentSkills.push(skill);
+                input.value = currentSkills.join(', ');
+                showToast(`Skill added: ${skill}`);
+            }
         }
 
 
@@ -914,7 +1144,17 @@
             document.querySelectorAll('.nav-item').forEach(v => v.classList.remove('active'));
             if (nav) nav.classList.add('active');
 
-            document.getElementById('page-title').innerText = name.charAt(0).toUpperCase() + name.slice(1);
+            const tooltips = {
+                'insights': 'Yeh kya hai? AI aapke skills aur education ke hisaab se best career options dikhata hai.',
+                'roadmap': 'Yeh kya hai? Aapke selected career tak pahunchne ka step-by-step raasta.',
+                'jobs': 'Yeh kya hai? Aapke liye filtered jobs jo aapke track aur matching score ke hisaab se hain.'
+            };
+
+            let titleHtml = name.charAt(0).toUpperCase() + name.slice(1);
+            if (tooltips[name]) {
+                titleHtml += ` <i class="help-tooltip" title="${tooltips[name]}">?</i>`;
+            }
+            document.getElementById('page-title').innerHTML = titleHtml;
             if (name === 'insights') loadInsights();
             if (name === 'jobs') loadJobs();
             if (name === 'schemes') loadSchemes();
@@ -922,6 +1162,7 @@
             if (name === 'risk') loadRiskAnalysis();
             if (name === 'applications') loadApplications();
             if (name === 'employability') loadEmployabilityScore();
+            if (name === 'passport') renderPassport();
             if (name === 'learning') {
                 const careerId = localStorage.getItem('selectedCareerId');
                 if(careerId) loadLearningCourses(careerId, 0);
@@ -929,10 +1170,35 @@
             }
         }
 
+
+
+        function renderPassport() {
+            if (!currentUser) return;
+            document.getElementById('passport-name').innerText = currentUser.name;
+            document.getElementById('passport-img').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser.name)}&background=random&size=200`;
+            document.getElementById('passport-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=CareerBridgeAI-Passport-${currentUser._id}`;
+            document.getElementById('passport-role').innerText = (currentUser.selectedCareer && currentUser.selectedCareer.title) || 'Exploring Careers';
+            document.getElementById('passport-edu').innerText = currentUser.education?.qualification || 'Graduate';
+            
+            const skillContainer = document.getElementById('passport-skills');
+            skillContainer.innerHTML = '';
+            if (currentUser.skills && currentUser.skills.length > 0) {
+                currentUser.skills.forEach(skill => {
+                    skillContainer.innerHTML += `
+                        <span class="px-3 py-1 bg-white/20 backdrop-blur rounded-lg text-[10px] font-black uppercase tracking-wider border border-white/10">
+                            ${skill}
+                        </span>
+                    `;
+                });
+            } else {
+                skillContainer.innerHTML = '<span class="text-xs opacity-50 italic">No skills verified yet</span>';
+            }
+        }
+
         async function loadEmployabilityScore() {
             try {
                 document.getElementById('emp-score-number').textContent = '...';
-                const res = await fetch('http://localhost:5000/api/employability/score', {
+                const res = await fetch(`${API_BASE}/api/employability/score`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
                 });
@@ -965,7 +1231,7 @@
             const container = document.getElementById('insights-container');
             container.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 font-bold italic">AI is calculating your best career matches...</div>';
             try {
-                const res = await fetch('http://localhost:5000/api/users/recommendations', {
+                const res = await fetch(`${API_BASE}/api/users/recommendations`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const careers = await res.json();
@@ -993,6 +1259,16 @@
                         </div>
                     `;
                 });
+
+                // Add Non-Tech Simulation Options if track is non-tech
+                if (currentUser.userTrack === 'non-tech') {
+                    const nonTechTrades = ['Electrician', 'Plumber', 'Tailoring', 'Cook/Chef', 'Beauty Parlour', 'Mobile Repair', 'AC Technician'];
+                    nonTechTrades.forEach(trade => {
+                        if (!careers.find(c => c.title === trade)) {
+                            simSelect.innerHTML += `<option value="non-tech-${trade.toLowerCase()}">${trade}</option>`;
+                        }
+                    });
+                }
             } catch (error) { container.innerHTML = 'Error loading recommendations.'; }
         }
 
@@ -1004,7 +1280,7 @@
 
             // Silent backend save (try karo, fail hua toh bhi chalega)
             try {
-                await fetch('http://localhost:5000/api/users/select-path', {
+                await fetch(`${API_BASE}/api/users/select-path`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ careerId, title })
@@ -1044,7 +1320,7 @@
 
             try {
                 // Gemini se dynamic roadmap generate karo
-                const res = await fetch('http://localhost:5000/api/users/roadmap/generate', {
+                const res = await fetch(`${API_BASE}/api/users/roadmap/generate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ career: title })
@@ -1054,7 +1330,7 @@
             } catch (err) {
                 // Fallback: purana DB roadmap try karo
                 try {
-                    const res2 = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                    const res2 = await fetch(`${API_BASE}/api/users/roadmap/${careerId}`);
                     const roadmap = await res2.json();
                     renderRoadmap(roadmap, title, careerId);
                 } catch (err2) {
@@ -1127,7 +1403,7 @@
             grid.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400 italic">Syncing resources and analyzing ROI...</div>';
 
             try {
-                const res = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                const res = await fetch(`${API_BASE}/api/users/roadmap/${careerId}`);
                 const roadmap = await res.json();
                 const step = roadmap[stepIndex];
 
@@ -1135,7 +1411,7 @@
                 const roiDataMap = {};
                 for (let r of step.resources) {
                     try {
-                        const roiRes = await fetch('http://localhost:8000/course-roi', {
+                        const roiRes = await fetch(`${ML_BASE}/course-roi`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
@@ -1181,7 +1457,7 @@
             const tbody = document.getElementById('applications-table');
             tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">Syncing your applications...</td></tr>';
             try {
-                const res = await fetch('http://localhost:5000/api/users/my-applications', {
+                const res = await fetch(`${API_BASE}/api/users/my-applications`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 userApplications = await res.json();
@@ -1226,7 +1502,7 @@
             btn.innerText = 'Applying...';
             btn.disabled = true;
             try {
-                const res = await fetch(`http://localhost:5000/api/users/apply/${jobId}`, {
+                const res = await fetch(`${API_BASE}/api/users/apply/${jobId}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -1252,7 +1528,7 @@
             const list = document.getElementById('schemes-list');
             list.innerHTML = '<div class="col-span-full py-10 text-center text-slate-400 italic font-bold">AI is identifying relevant government support...</div>';
             try {
-                const res = await fetch('http://localhost:5000/api/schemes', {
+                const res = await fetch(`${API_BASE}/api/schemes`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const schemes = await res.json();
@@ -1281,9 +1557,23 @@
             } catch (err) { list.innerHTML = '<div class="col-span-full text-center text-red-400 font-bold">Error loading schemes.</div>'; }
         }
 
+        async function updateTrack(newTrack) {
+            try {
+                const res = await fetch(`${API_BASE}/api/users/profile`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ userTrack: newTrack })
+                });
+                if (res.ok) {
+                    showToast(`Track updated to ${newTrack}! Refreshing...`);
+                    setTimeout(() => window.location.reload(), 1500);
+                }
+            } catch (err) { showToast('Failed to update track', 'error'); }
+        }
+
         async function loadRiskAnalysis() {
             try {
-                const res = await fetch('http://localhost:5000/api/users/risk-analysis', {
+                const res = await fetch(`${API_BASE}/api/users/risk-analysis`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
@@ -1314,7 +1604,7 @@
             const outcomes = [1, 3, 5];
             results.innerHTML = '';
             for (let yr of outcomes) {
-                const res = await fetch('http://localhost:5000/api/users/simulate', {
+                const res = await fetch(`${API_BASE}/api/users/simulate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ careerId, year: yr })
@@ -1351,7 +1641,7 @@
                 resume: { url: document.getElementById('prof-resume').value }
             };
 
-            const res = await fetch('http://localhost:5000/api/users/profile', {
+            const res = await fetch(`${API_BASE}/api/users/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
@@ -1375,14 +1665,14 @@
         let resumeStep = 0;
         let resumeData = {};
         const resumeQuestions = [
-            "Great! Let's build your professional resume. First, what is your current or highest educational qualification and the institution name?",
-            "What are your core technical or soft skills? (e.g., Python, Typing, Customer Service)",
-            "Any past work experience, internships, or volunteer work? (Mention role and company)",
-            "What is your key career objective or what kind of role are you looking for?",
-            "Mention any significant projects or achievements you're proud of.",
-            "What are your preferred working locations or are you open to remote work?",
-            "Please provide your contact number for employers (optional but recommended).",
-            "Lastly, any certifications or extra-curricular activities you'd like to include?"
+            "📚 Education: What is your highest qualification and institution name? (e.g., B.Tech Computer Science, XYZ College, 2027)",
+            "⚡ Skills: List your technical and soft skills separated by commas. (e.g., Python, JavaScript, React, Problem Solving, Team Leadership)",
+            "💼 Experience: Any work experience, internships, or freelance work? If fresher, write 'Fresher — open to opportunities'.",
+            "🎯 Career Objective: What role are you targeting and what value do you bring? (2-3 sentences)",
+            "🚀 Projects: List your key projects — one per line. (e.g., E-Commerce App | React, Node.js | Live on production)",
+            "📍 Location: What are your preferred work locations? (e.g., Bangalore, Remote, Open to relocation)",
+            "📞 Contact: Your phone number and LinkedIn/GitHub URL (optional but helps employers)",
+            "🏆 Certifications & Activities: List certifications and extracurricular activities — one per line."
         ];
 
         async function sendMessage() {
@@ -1409,7 +1699,7 @@
             if (text.toLowerCase().includes('linkedin.com/in/')) {
                 sendBotMessage("LinkedIn URL detected! Fetching your professional data from the cloud...");
                 try {
-                    const res = await fetch('http://localhost:8000/parse', {
+                    const res = await fetch(`${ML_BASE}/parse`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ text })
@@ -1441,12 +1731,12 @@
                     const careerId = localStorage.getItem('selectedCareerId');
                     let requiredSkills = ["Communication", "Problem Solving"]; // Fallback
                     if (careerId) {
-                        const cres = await fetch(`http://localhost:5000/api/users/roadmap/${careerId}`);
+                        const cres = await fetch(`${API_BASE}/api/users/roadmap/${careerId}`);
                         const roadmap = await cres.json();
                         requiredSkills = roadmap.flatMap(step => step.skills);
                     }
 
-                    const res = await fetch('http://localhost:8000/gap-analysis', {
+                    const res = await fetch(`${ML_BASE}/gap-analysis`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1473,7 +1763,7 @@
 
             // Emotion Analysis & Tone Adjustment
             try {
-                const emotionRes = await fetch('http://localhost:5000/api/users/emotion-check', {
+                const emotionRes = await fetch(`${API_BASE}/api/users/emotion-check`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ text })
@@ -1491,12 +1781,43 @@
                 }
             } catch (err) { console.error("Sentiment analysis skipped"); }
 
-            // Default Bot Logic
-            setTimeout(() => {
-                if (!resumeFlowActive && !text.toLowerCase().includes('skill') && !text.toLowerCase().includes('resume')) {
-                    sendBotMessage(`I'm here to help! You can provide a LinkedIn URL, ask about "skill gaps" for your selected path, or say "build resume" to get started.`);
+            // Gemini-powered AI chat for all other queries
+            if (!resumeFlowActive) {
+                const typingId = 'typing-' + Date.now();
+                const chatMsg = document.getElementById('chat-messages');
+                chatMsg.innerHTML += `
+                    <div id="${typingId}" class="flex items-start space-x-4">
+                        <div class="w-10 h-10 bg-blue-100 text-brand-blue rounded-xl flex items-center justify-center shadow-sm"><i class="fas fa-robot"></i></div>
+                        <div class="bg-slate-50 p-4 rounded-2xl rounded-tl-none text-slate-400 max-w-[80%] font-medium shadow-sm border border-slate-100 italic">
+                            <i class="fas fa-circle-notch fa-spin mr-2"></i>Thinking...
+                        </div>
+                    </div>`;
+                chatMsg.scrollTop = chatMsg.scrollHeight;
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/users/chat`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({
+                            message: text,
+                            userContext: currentUser ? {
+                                name: currentUser.name,
+                                skills: currentUser.skills,
+                                location: currentUser.location,
+                                education: currentUser.education?.qualification,
+                                selectedCareer: currentUser.selectedCareer?.title,
+                                employabilityScore: currentUser.employabilityScore
+                            } : {}
+                        })
+                    });
+                    const data = await res.json();
+                    document.getElementById(typingId)?.remove();
+                    sendBotMessage(data.reply || "Main samajh nahi paaya. Career, skills, ya resume ke baare mein puchiye!");
+                } catch (err) {
+                    document.getElementById(typingId)?.remove();
+                    sendBotMessage("Main abhi busy hoon. Thodi der mein dobara try karo! Tum 'build resume', 'skill gap', ya LinkedIn URL bhi share kar sakte ho.");
                 }
-            }, 1000);
+            }
         }
 
         async function syncParsedData(data) {
@@ -1506,7 +1827,7 @@
                 experience: data.experience,
                 education: { qualification: data.education[0] || 'Graduate' }
             };
-            await fetch('http://localhost:5000/api/users/profile', {
+            await fetch(`${API_BASE}/api/users/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
@@ -1545,41 +1866,119 @@
         }
 
         function generateResume() {
+            const name = currentUser?.name || resumeData.contact?.split('\n')[0] || 'Your Name';
+            const email = currentUser?.email || '';
+            const location = currentUser?.location || '';
+            const phone = resumeData.contact || '';
+
+            // Parse skills into array
+            const skillsArr = (resumeData.skills || '').split(',').map(s => s.trim()).filter(Boolean);
+
+            // Parse projects into bullet points
+            const projectLines = (resumeData.projects || '').split('\n').filter(Boolean);
+
+            // Parse certifications
+            const certLines = (resumeData.certifications || '').split('\n').filter(Boolean);
+
             const resumeHtml = `
-                <div id="ai-resume-card" class="bg-white border-2 border-brand-blue/20 p-6 rounded-2xl shadow-lg mt-4 text-brand-dark">
-                    <div class="flex justify-between items-center border-b border-slate-100 pb-4 mb-4">
-                        <div>
-                            <h2 class="text-2xl font-black">${currentUser.name}</h2>
-                            <p class="text-slate-500 font-bold">${currentUser.email}</p>
-                            <p class="text-slate-400 text-[10px] font-bold uppercase">${resumeData.contact || ''}</p>
+                <div id="ai-resume-card"
+                    style="font-family: 'Arial', sans-serif; background: white; color: #1a1a2e;
+                           border: 1px solid #e2e8f0; border-radius: 12px; padding: 32px;
+                           max-width: 680px; margin: 12px auto; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+
+                    <!-- HEADER — Name + Contact -->
+                    <div style="text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 16px; margin-bottom: 20px;">
+                        <h1 style="font-size: 26px; font-weight: 900; letter-spacing: -0.5px; margin: 0 0 4px 0; color: #0f172a;">${name}</h1>
+                        <p style="font-size: 12px; color: #475569; margin: 0;">
+                            ${location ? location + ' &nbsp;|&nbsp; ' : ''}
+                            ${phone ? phone + ' &nbsp;|&nbsp; ' : ''}
+                            ${email}
+                        </p>
+                    </div>
+
+                    <!-- SUMMARY -->
+                    ${resumeData.objective ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Summary</h2>
+                        <p style="font-size: 12px; color: #374151; line-height: 1.6; margin: 0;">${resumeData.objective}</p>
+                    </div>` : ''}
+
+                    <!-- EDUCATION -->
+                    ${resumeData.education ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Education</h2>
+                        <p style="font-size: 12px; font-weight: 700; color: #1e293b; margin: 0 0 2px 0;">${resumeData.education}</p>
+                        <p style="font-size: 11px; color: #64748b; margin: 0;">${location || 'India'}</p>
+                    </div>` : ''}
+
+                    <!-- TECHNICAL SKILLS -->
+                    ${skillsArr.length > 0 ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 10px;">Technical Skills</h2>
+                        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            ${skillsArr.map(s => `<span style="background: #eff6ff; color: #1d4ed8; padding: 3px 10px;
+                                border-radius: 4px; font-size: 11px; font-weight: 700;">${s}</span>`).join('')}
                         </div>
-                        <div class="text-brand-blue opacity-20"><i class="fas fa-file-invoice fa-3x"></i></div>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <section>
-                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Career Objective</h4>
-                            <p class="text-xs font-medium italic text-slate-600">${resumeData.objective}</p>
-                        </section>
-                        <section>
-                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Education</h4>
-                            <p class="text-xs font-bold">${resumeData.education}</p>
-                        </section>
-                        <section>
-                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Core Skills</h4>
-                            <div class="flex flex-wrap gap-1">
-                                ${resumeData.skills.split(',').map(s => `<span class="bg-blue-50 text-brand-blue px-2 py-0.5 rounded text-[9px] font-black uppercase">${s.trim()}</span>`).join('')}
-                            </div>
-                        </section>
-                        <section>
-                            <h4 class="text-[10px] font-black uppercase text-brand-blue mb-1">Experience</h4>
-                            <p class="text-xs text-slate-600">${resumeData.experience}</p>
-                        </section>
-                    </div>
-                    
-                    <div class="mt-8 pt-4 border-t border-slate-100 flex space-x-2">
-                        <button onclick="downloadResume()" class="flex-1 bg-brand-blue text-white font-bold p-3 rounded-xl text-[10px] flex items-center justify-center space-x-2 uppercase tracking-tight shadow-md shadow-blue-100">
-                            <i class="fas fa-download"></i> <span>Download ATS PDF</span>
+                    </div>` : ''}
+
+                    <!-- PROJECTS -->
+                    ${resumeData.projects ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Projects</h2>
+                        ${projectLines.map(line => `
+                            <div style="margin-bottom: 6px;">
+                                <p style="font-size: 12px; font-weight: 700; color: #1e293b; margin: 0 0 2px 0;">${line}</p>
+                            </div>`).join('')}
+                    </div>` : ''}
+
+                    <!-- EXPERIENCE -->
+                    ${resumeData.experience && resumeData.experience.toLowerCase() !== 'no' && resumeData.experience.length > 3 ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Experience</h2>
+                        <p style="font-size: 12px; color: #374151; line-height: 1.6; margin: 0;">${resumeData.experience}</p>
+                    </div>` : ''}
+
+                    <!-- CERTIFICATIONS -->
+                    ${certLines.length > 0 ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Certifications</h2>
+                        ${certLines.map(c => `<p style="font-size: 12px; color: #374151; margin: 0 0 4px 0;">• ${c}</p>`).join('')}
+                    </div>` : ''}
+
+                    <!-- PREFERRED LOCATION -->
+                    ${resumeData.location ? `
+                    <div style="margin-bottom: 18px;">
+                        <h2 style="font-size: 11px; font-weight: 800; text-transform: uppercase;
+                                   letter-spacing: 1.5px; color: #2563eb; border-bottom: 1px solid #dbeafe;
+                                   padding-bottom: 4px; margin-bottom: 8px;">Preferred Work Location</h2>
+                        <p style="font-size: 12px; color: #374151; margin: 0;">${resumeData.location}</p>
+                    </div>` : ''}
+
+                    <!-- FOOTER BUTTONS -->
+                    <div style="margin-top: 24px; display: flex; gap: 12px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                        <button onclick="downloadResumePDF()"
+                            style="flex: 1; background: #2563eb; color: white; font-weight: 800;
+                                   padding: 12px; border-radius: 10px; border: none; cursor: pointer;
+                                   font-size: 12px; letter-spacing: 0.5px;">
+                            ⬇ Download as PDF
+                        </button>
+                        <button onclick="printResume()"
+                            style="flex: 1; background: #f8fafc; color: #1e293b; font-weight: 800;
+                                   padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0;
+                                   cursor: pointer; font-size: 12px;">
+                            🖨 Print Resume
                         </button>
                     </div>
                 </div>
@@ -1600,7 +1999,7 @@
                 experience: resumeData.experience,
                 education: { qualification: resumeData.education }
             };
-            await fetch('http://localhost:5000/api/users/profile', {
+            await fetch(`${API_BASE}/api/users/profile`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify(payload)
@@ -1608,8 +2007,32 @@
             fetchUser();
         }
 
-        function downloadResume() {
-            alert("ATS-Approved Resume generated and saved to your profile! You can now use AI Apply with confidence.");
+        function downloadResumePDF() {
+            const card = document.getElementById('ai-resume-card');
+            if (!card) { alert('Resume card not found. Generate resume first.'); return; }
+
+            // Use browser print with print-only styles for clean PDF
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Resume - ${currentUser?.name || 'CareerBridge'}</title>
+                    <style>
+                        body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                        @media print { body { padding: 0; } }
+                    </style>
+                </head>
+                <body>${card.outerHTML}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+        }
+
+        function printResume() {
+            downloadResumePDF();
         }
 
         async function loadJobs(filter = '') {
@@ -1628,20 +2051,20 @@
 
             try {
                 // Fetch applications first to check status
-                const appRes = await fetch('http://localhost:5000/api/users/my-applications', {
+                const appRes = await fetch(`${API_BASE}/api/users/my-applications`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 userApplications = await appRes.json();
 
                 // Fetch Native Jobs
-                const url = filter ? `http://localhost:5000/api/jobs/matched?type=${filter}` : 'http://localhost:5000/api/jobs/matched';
+                const url = filter ? `${API_BASE}/api/jobs/matched?type=${filter}` : `${API_BASE}/api/jobs/matched`;
                 const res = await fetch(url, { headers: { 'Authorization': `Bearer ${token}` } });
                 const jobs = await res.json();
 
                 // Fetch External Skill India Opportunities
                 let externalOpps = [];
                 try {
-                    const extRes = await fetch('http://localhost:5000/api/users/external-opportunities', {
+                    const extRes = await fetch(`${API_BASE}/api/users/external-opportunities`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     externalOpps = await extRes.json();
@@ -1715,7 +2138,7 @@
 
             const expertise = document.getElementById('filter-expertise').value;
             const feeLimit = document.getElementById('filter-fee').value;
-            let url = `http://localhost:5000/api/users/consultants/list?`;
+            let url = `${API_BASE}/api/users/consultants/list?`;
             if (expertise) url += `expertise=${expertise}&`;
             if (feeLimit) url += `maxFee=${feeLimit}&`;
 
@@ -1779,7 +2202,7 @@
 
             // Get Availability
             try {
-                const res = await fetch(`http://localhost:5000/api/consultants/${id}/availability`);
+                const res = await fetch(`${API_BASE}/api/consultants/${id}/availability`);
                 consultantAvailability = await res.json();
             } catch (err) { console.error('Error fetching availability'); }
 
@@ -1792,6 +2215,8 @@
 
         function closeBookingModal() {
             document.getElementById('booking-modal').classList.add('hidden');
+            const errDiv = document.getElementById('booking-error-msg');
+            if (errDiv) { errDiv.textContent = ''; errDiv.classList.add('hidden'); }
             selectedSlot = null;
         }
 
@@ -1838,7 +2263,7 @@
             btn.disabled = true;
 
             try {
-                const res = await fetch('http://localhost:5000/api/users/book-session', {
+                const res = await fetch(`${API_BASE}/api/users/book-session`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
@@ -1873,7 +2298,7 @@
                     "handler": async function (response) {
                         // On success, verify on backend
                         try {
-                            const vRes = await fetch('http://localhost:5000/api/users/verify-payment', {
+                            const vRes = await fetch(`${API_BASE}/api/users/verify-payment`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                                 body: JSON.stringify({
@@ -1907,7 +2332,14 @@
                 rzp.open();
 
             } catch (err) {
-                alert('Booking failed: ' + err.message);
+                // Show error INSIDE modal instead of browser alert — modal stays open
+                const errDiv = document.getElementById('booking-error-msg');
+                if (errDiv) {
+                    errDiv.textContent = '⚠️ ' + err.message + ' — Please try again or contact support.';
+                    errDiv.classList.remove('hidden');
+                } else {
+                    alert('Booking failed: ' + err.message);
+                }
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -1919,7 +2351,7 @@
             const tbody = document.getElementById('sessions-table');
             tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center text-slate-400 italic">Syncing sessions...</td></tr>';
             try {
-                const res = await fetch('http://localhost:5000/api/users/my-sessions', {
+                const res = await fetch(`${API_BASE}/api/users/my-sessions`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const sessions = await res.json();
@@ -1967,7 +2399,7 @@
                 // We'll fetch the specific session details from the existing sessions list or a new endpoint
                 // Since loadConsultationSessions already has the data but in a loop, let's fetch it specifically if needed
                 // For simplicity, let's assume we can fetch it or find it in a global sessions array
-                const res = await fetch(`http://localhost:5000/api/users/my-sessions`, {
+                const res = await fetch(`${API_BASE}/api/users/my-sessions`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const sessions = await res.json();
@@ -2003,7 +2435,7 @@
         async function checkAIConsultantRecommendation() {
             if (!currentUser) return;
             try {
-                const res = await fetch('http://localhost:8000/consultant/recommend', {
+                const res = await fetch(`${ML_BASE}/consultant/recommend`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -2066,7 +2498,7 @@ async function loadRiskAnalysis() {
         document.getElementById('risk-content').classList.add('hidden');
 
         // Call Risk Analysis API
-        const response = await fetch(`http://localhost:5000/api/risk/user/${currentUserId}`, {
+        const response = await fetch(`${API_BASE}/api/risk/user/${currentUserId}`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }

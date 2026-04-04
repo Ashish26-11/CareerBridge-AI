@@ -30,7 +30,45 @@ class CareerSimulator {
             // Others
             'Excel': { entry: '2-3.5 LPA', mid: '4-7 LPA', demand: 70 },
             'SQL': { entry: '3-5 LPA', mid: '6-11 LPA', demand: 85 },
-            'Data Analysis': { entry: '3.5-6 LPA', mid: '7-14 LPA', demand: 88 }
+            'Data Analysis': { entry: '3.5-6 LPA', mid: '7-14 LPA', demand: 88 },
+        // ── ITI & Technical Trades ──────────────────────────
+        'Electrician': { entry: '1.8-3.5 LPA', mid: '3.5-7 LPA', demand: 88 },
+        'Plumber': { entry: '1.5-3 LPA', mid: '3-6 LPA', demand: 85 },
+        'Welder': { entry: '1.8-3.2 LPA', mid: '3.2-6.5 LPA', demand: 82 },
+        'Fitter': { entry: '1.8-3.5 LPA', mid: '3.5-7 LPA', demand: 80 },
+        'Carpenter': { entry: '1.5-3 LPA', mid: '3-5.5 LPA', demand: 78 },
+        'Mason': { entry: '1.8-3.2 LPA', mid: '3-5 LPA', demand: 83 },
+        'AC Technician': { entry: '2-3.8 LPA', mid: '4-8 LPA', demand: 90 },
+        'Mobile Repair': { entry: '1.8-3.5 LPA', mid: '3.5-7 LPA', demand: 87 },
+        'Two Wheeler Mechanic': { entry: '1.5-2.8 LPA', mid: '3-5.5 LPA', demand: 86 },
+        // ── Textile & Garment ───────────────────────────────
+        'Tailoring': { entry: '1.2-2.5 LPA', mid: '2.5-5 LPA', demand: 75 },
+        'Embroidery': { entry: '1.2-2.2 LPA', mid: '2-4 LPA', demand: 70 },
+        'Fashion Design': { entry: '2-4 LPA', mid: '4-9 LPA', demand: 72 },
+        // ── Beauty & Wellness ───────────────────────────────
+        'Beauty Parlour': { entry: '1.2-2.5 LPA', mid: '2.5-6 LPA', demand: 80 },
+        'Hair Stylist': { entry: '1.5-3 LPA', mid: '3-7 LPA', demand: 78 },
+        'Yoga Instructor': { entry: '2-4 LPA', mid: '4-9 LPA', demand: 76 },
+        // ── Food & Hospitality ──────────────────────────────
+        'Cook/Chef': { entry: '1.5-3 LPA', mid: '3-7 LPA', demand: 82 },
+        'Bakery': { entry: '1.2-2.5 LPA', mid: '2.5-5 LPA', demand: 74 },
+        'Hotel Management': { entry: '2-4 LPA', mid: '4-8 LPA', demand: 79 },
+        // ── Agriculture & Rural ─────────────────────────────
+        'Organic Farming': { entry: '1-2 LPA', mid: '2-5 LPA', demand: 65 },
+        'Dairy Farming': { entry: '1-2.5 LPA', mid: '2.5-5 LPA', demand: 68 },
+        'Nursery/Horticulture': { entry: '1.2-2.2 LPA', mid: '2-4.5 LPA', demand: 66 },
+        // ── Retail & Sales ──────────────────────────────────
+        'Retail Sales': { entry: '1.5-2.8 LPA', mid: '2.8-5.5 LPA', demand: 84 },
+        'Insurance Agent': { entry: '1.5-3 LPA', mid: '3-7 LPA', demand: 80 },
+        'Medical Representative': { entry: '2.5-4.5 LPA', mid: '5-10 LPA', demand: 83 },
+        // ── Logistics & Transport ───────────────────────────
+        'Delivery Executive': { entry: '1.8-3 LPA', mid: '3-5 LPA', demand: 91 },
+        'Truck Driver': { entry: '2-3.5 LPA', mid: '3.5-6 LPA', demand: 89 },
+        'Warehouse Manager': { entry: '2-4 LPA', mid: '4-8 LPA', demand: 86 },
+        // ── Healthcare & Para-medical ───────────────────────
+        'Nursing Assistant': { entry: '1.8-3 LPA', mid: '3-6 LPA', demand: 88 },
+        'Medical Lab Tech': { entry: '2-3.5 LPA', mid: '3.5-7 LPA', demand: 85 },
+        'Pharmacy Assistant': { entry: '1.8-3.2 LPA', mid: '3-6 LPA', demand: 82 }
         };
     }
 
@@ -48,7 +86,18 @@ class CareerSimulator {
             'Digital Marketing': { beginner: 6, intermediate: 12 },
             'DevOps': { beginner: 12, intermediate: 20 },
             'SQL': { beginner: 6, intermediate: 10 },
-            'Data Analysis': { beginner: 10, intermediate: 16 }
+            'Data Analysis': { beginner: 10, intermediate: 16 },
+        'Electrician': { beginner: 24, intermediate: 40 },
+        'Plumber': { beginner: 20, intermediate: 36 },
+        'Welder': { beginner: 20, intermediate: 36 },
+        'Carpenter': { beginner: 18, intermediate: 32 },
+        'Tailoring': { beginner: 16, intermediate: 28 },
+        'Beauty Parlour': { beginner: 12, intermediate: 20 },
+        'Cook/Chef': { beginner: 16, intermediate: 28 },
+        'Mobile Repair': { beginner: 16, intermediate: 28 },
+        'AC Technician': { beginner: 20, intermediate: 36 },
+        'Delivery Executive': { beginner: 2, intermediate: 4 },
+        'Retail Sales': { beginner: 4, intermediate: 8 }
         };
     }
 
@@ -88,7 +137,15 @@ class CareerSimulator {
             'UI/UX Design': ['UI Designer', 'UX Designer', 'Product Designer'],
             'Digital Marketing': ['Digital Marketing Executive', 'SEO Specialist', 'Social Media Manager'],
             'DevOps': ['DevOps Engineer', 'Site Reliability Engineer', 'Cloud Engineer'],
-            'Data Analysis': ['Data Analyst', 'Business Analyst', 'Analytics Consultant']
+            'Data Analysis': ['Data Analyst', 'Business Analyst', 'Analytics Consultant'],
+        'Electrician': ['Electrical Contractor', 'Building Electrician', 'Industrial Electrician', 'Solar Panel Installer'],
+        'Plumber': ['Residential Plumber', 'Industrial Plumber', 'Pipe Fitter', 'Sanitation Worker'],
+        'Tailoring': ['Master Tailor', 'Fashion Designer', 'Boutique Owner', 'Garment Factory Supervisor'],
+        'Cook/Chef': ['Home Chef', 'Restaurant Cook', 'Cloud Kitchen Owner', 'Catering Business Owner'],
+        'Beauty Parlour': ['Beautician', 'Salon Owner', 'Makeup Artist', 'Bridal Specialist'],
+        'Mobile Repair': ['Mobile Technician', 'Electronics Repair Shop Owner', 'Brand Service Center Tech'],
+        'AC Technician': ['HVAC Technician', 'AC Repair Business Owner', 'Cold Chain Technician'],
+        'Delivery Executive': ['Delivery Partner', 'Fleet Supervisor', 'Last Mile Logistics Manager']
         };
 
         return roleMapping[skillName] || ['Junior Developer', 'Entry Level Professional'];

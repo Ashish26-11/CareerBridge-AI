@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         const jobs = await Job.find(query).populate('employerId', 'company');
         res.json(jobs);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -27,7 +27,7 @@ router.get('/matched', async (req, res) => {
     try {
         const token = req.headers.authorization?.split(' ')[1];
         if (!token) return res.status(401).json({ message: 'No token' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || (() => { throw new Error('JWT_SECRET not set') })());
 
         const user = await User.findById(decoded.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -66,7 +66,7 @@ router.get('/matched', async (req, res) => {
 
         res.json(matchedJobs);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
@@ -100,7 +100,7 @@ router.get('/seed', async (req, res) => {
         const createdJobs = await Job.insertMany(defaultJobs);
         res.json(createdJobs);
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ message: err.message === 'JWT_SECRET not set' ? 'Server misconfiguration' : err.message });
     }
 });
 
